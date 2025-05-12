@@ -3,504 +3,560 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poké Personality Quiz</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>Pokémon Particle Cloud - 1025 Pokémon!</title>
     <style>
-        /* Basic Reset & Font */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Press Start 2P', cursive;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #dedede; /* Retro background */
-            color: #333;
-            font-size: 10px; /* Base size for pixel font */
-            line-height: 1.6;
-        }
-
-        /* Pokedex Casing */
-        #pokedex {
-            width: 350px;
-            height: 550px;
-            background-color: #d14040; /* Pokedex red */
-            border-radius: 15px 15px 25px 15px;
-            border: 4px solid #a03030;
-            box-shadow: 5px 5px 10px rgba(0,0,0,0.4);
-            padding: 20px;
-            position: relative; /* For pseudo-elements if needed */
+        body { margin: 0; overflow: hidden; background-color: #111; color: #fff; font-family: Arial, sans-serif; }
+        #canvasContainer { width: 100vw; height: 100vh; display: block; cursor: pointer; }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 5px;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            gap: 10px;
+            max-height: 90vh;
+            overflow-y: auto;
+            z-index: 10;
         }
+        #controls label, #controls button, #controls input { display: block; margin-bottom: 5px; }
+        #controls button { padding: 8px 12px; background-color: #333; color: #fff; border: 1px solid #555; border-radius: 3px; cursor: pointer; }
+        #controls button:hover { background-color: #555; }
+        #controls input[type="color"], #controls input[type="range"], #controls input[type="number"] { width: 150px; }
+        .control-group { border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 10px; }
+        .control-group:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
 
-        /* Pokedex "Screen" */
-        #screen {
-            width: 100%;
-            height: 380px;
-            background-color: #a0d0a0; /* Gameboy green-ish */
-            border: 5px inset #70a070;
-            margin-top: 20px;
-            padding: 15px;
-            overflow-y: auto; /* Scroll if content overflows */
-            scrollbar-width: thin; /* For Firefox */
-            scrollbar-color: #70a070 #a0d0a0; /* For Firefox */
+        #pokemonInfoBox {
+            display: none; flex-direction: column; align-items: center;
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background-color: rgba(40,40,60,0.95); padding: 20px; border-radius: 10px;
+            border: 2px solid #606080; text-align: center; box-shadow: 0 0 20px rgba(120,120,255,0.6);
+            width: 250px; z-index: 5;
         }
-        /* Webkit scrollbar styling */
-        #screen::-webkit-scrollbar {
-            width: 8px;
+        #pokemonSprite {
+            display: none; width: 120px; height: 120px; object-fit: contain; margin-bottom: 15px;
+            border: 3px solid #707090; border-radius: 8px; background-color: rgba(255,255,255,0.1);
+            image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges;
         }
-        #screen::-webkit-scrollbar-track {
-            background: #a0d0a0;
+        #pokemonInfoBox p { margin: 0 0 15px 0; font-size: 1.3em; font-weight: bold;}
+        #pokemonInfoBox button {
+            padding: 10px 20px; background-color: #c0392b; color: white; border: none;
+            border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.2s ease;
         }
-        #screen::-webkit-scrollbar-thumb {
-            background-color: #70a070;
-            border-radius: 4px;
-            border: 1px solid #a0d0a0;
+        #pokemonInfoBox button:hover { background-color: #e74c3c; }
+
+        #loadingIndicator {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); color: white; display: flex;
+            justify-content: center; align-items: center; font-size: 2em; z-index: 1000;
+            text-align: center; padding: 20px;
         }
-
-
-        h1 {
-            font-size: 14px;
-            text-align: center;
-            margin-bottom: 15px;
-            color: #333;
-        }
-
-        /* Quiz Form Styling */
-        #quiz-form {
-            display: block; /* Show initially */
-        }
-
-        .question-block {
-            margin-bottom: 15px;
-            border-bottom: 1px dashed #70a070;
-            padding-bottom: 10px;
-        }
-
-        .question-block p {
-            margin-bottom: 8px;
-            font-size: 9px;
-        }
-
-        .question-block label {
-            display: block;
-            margin-bottom: 5px;
-            cursor: pointer;
-            font-size: 8px;
-        }
-
-        .question-block input[type="radio"] {
-            margin-right: 5px;
-            /* Hide default radio, style the label later if needed */
-            appearance: none;
-            -webkit-appearance: none;
-            width: 8px;
-            height: 8px;
-            border: 1px solid #333;
-            border-radius: 50%;
-            display: inline-block;
-            position: relative;
-            top: 1px;
-        }
-
-        .question-block input[type="radio"]:checked {
-            background-color: #333;
-        }
-
-        /* Submit Button */
-        #submit-btn {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 12px;
-            padding: 10px 20px;
-            background-color: #58a8f8; /* Blue button */
-            color: white;
-            border: 2px outset #3078c0;
-            border-radius: 5px;
-            cursor: pointer;
-            display: block;
-            margin: 20px auto 0 auto;
-            text-align: center;
-        }
-
-        #submit-btn:active {
-            border-style: inset;
-            background-color: #4088d0;
-        }
-
-        /* Result Display Styling */
-        #result {
-            display: none; /* Hidden initially */
-            text-align: center;
-        }
-
-        #pokemon-name {
-            font-size: 16px;
-            margin-bottom: 15px;
-            color: #333;
-            text-transform: uppercase;
-        }
-
-        #pokemon-image {
-            width: 150px;
-            height: 150px;
-            object-fit: contain;
-            background-color: #c0e0c0; /* Slightly lighter background for image */
-            border: 3px solid #70a070;
-            padding: 5px;
-            margin: 0 auto; /* Center the image block */
-            display: block;
-            image-rendering: pixelated; /* Keep the pixel art sharp */
-        }
-
-        /* Pokedex "Buttons" & Details (Optional decorative elements) */
-         #pokedex::before {
-            content: '';
-            position: absolute;
-            top: 25px;
-            left: 25px;
-            width: 25px;
-            height: 25px;
-            background-color: #58a8f8; /* Blue light */
-            border-radius: 50%;
-            border: 3px solid #fff;
-            box-shadow: 0 0 5px #fff;
-         }
-
-         #pokedex::after {
-            content: '';
-            position: absolute;
-            top: 30px;
-            left: 65px;
-            width: 10px;
-            height: 10px;
-            background-color: #d14040; /* Red light */
-            border-radius: 50%;
-            border: 2px solid #a03030;
-         }
-
-         /* Simple D-pad like element */
-         .d-pad {
-            width: 60px;
-            height: 60px;
-            background-color: #333;
-            border-radius: 5px;
-            position: absolute;
-            bottom: 40px;
-            left: 40px;
-            border: 2px solid #111;
-         }
-         .d-pad::before, .d-pad::after {
-             content: '';
-             position: absolute;
-             background-color: #555;
-             border: 1px solid #222;
-         }
-         .d-pad::before { /* Vertical bar */
-            width: 20px;
-            height: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-         }
-          .d-pad::after { /* Horizontal bar */
-            width: 100%;
-            height: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-          }
-
-         /* Simple A/B Buttons */
-          .action-buttons {
-            position: absolute;
-            bottom: 50px;
-            right: 40px;
-            display: flex;
-            gap: 15px;
-          }
-           .action-button {
-            width: 35px;
-            height: 35px;
-            background-color: #505050; /* Dark gray button */
-            border-radius: 50%;
-            border: 2px solid #222;
-            box-shadow: 2px 2px 3px rgba(0,0,0,0.5);
-           }
-
-
     </style>
 </head>
 <body>
-
-    <div id="pokedex">
-        <!-- Decorative elements can go here -->
-
-        <div id="screen">
-            <div id="quiz-form">
-                <h1>Poké Personality!</h1>
-                <form id="personality-quiz">
-                    <!-- Question 1 -->
-                    <div class="question-block">
-                        <p>1. How do you react to sudden changes?</p>
-                        <label><input type="radio" name="q1" value="A" required> Adapt quickly, it's exciting!</label>
-                        <label><input type="radio" name="q1" value="B"> Analyze the situation first.</label>
-                        <label><input type="radio" name="q1" value="C"> Prefer stability, but cope.</label>
-                        <label><input type="radio" name="q1" value="D"> Get stressed or uncomfortable.</label>
-                    </div>
-
-                    <!-- Question 2 -->
-                    <div class="question-block">
-                        <p>2. What's your ideal weekend activity?</p>
-                        <label><input type="radio" name="q2" value="A" required> High-energy adventure (hiking, sports).</label>
-                        <label><input type="radio" name="q2" value="B"> Relaxing at home (reading, movies).</label>
-                        <label><input type="radio" name="q2" value="C"> Socializing with friends.</label>
-                        <label><input type="radio" name="q2" value="D"> Working on a personal project or hobby.</label>
-                    </div>
-
-                    <!-- Question 3 -->
-                    <div class="question-block">
-                        <p>3. When faced with a problem, you...</p>
-                        <label><input type="radio" name="q3" value="A" required> Tackle it head-on immediately.</label>
-                        <label><input type="radio" name="q3" value="B"> Think through all possible solutions.</label>
-                        <label><input type="radio" name="q3" value="C"> Ask others for advice or help.</label>
-                        <label><input type="radio" name="q3" value="D"> Hope it resolves itself or avoid it.</label>
-                    </div>
-
-                     <!-- Question 4 -->
-                     <div class="question-block">
-                        <p>4. Which element attracts you most?</p>
-                        <label><input type="radio" name="q4" value="A" required> Fire (Passion, Energy)</label>
-                        <label><input type="radio" name="q4" value="B" required> Water (Calmness, Flow)</label>
-                        <label><input type="radio" name="q4" value="C" required> Earth (Stability, Nature)</label>
-                        <label><input type="radio" name="q4" value="D" required> Air (Freedom, Intellect)</label>
-                    </div>
-
-                    <!-- Question 5 -->
-                    <div class="question-block">
-                        <p>5. How do you typically feel in large crowds?</p>
-                        <label><input type="radio" name="q5" value="A" required> Energized and excited.</label>
-                        <label><input type="radio" name="q5" value="B" required> Observant and analytical.</label>
-                        <label><input type="radio" name="q5" value="C" required> A bit overwhelmed, prefer smaller groups.</label>
-                        <label><input type="radio" name="q5" value="D" required> Uncomfortable, prefer to be alone.</label>
-                    </div>
-
-                     <!-- Question 6 -->
-                     <div class="question-block">
-                        <p>6. Your friends would describe you as:</p>
-                        <label><input type="radio" name="q6" value="A" required> Energetic and spontaneous.</label>
-                        <label><input type="radio" name="q6" value="B" required> Loyal and dependable.</label>
-                        <label><input type="radio" name="q6" value="C" required> Calm and thoughtful.</label>
-                        <label><input type="radio" name="q6" value="D" required> Quirky and mischievous.</label>
-                    </div>
-
-                    <!-- Question 7 -->
-                    <div class="question-block">
-                        <p>7. What kind of power would you want?</p>
-                        <label><input type="radio" name="q7" value="A" required> Super speed or strength.</label>
-                        <label><input type="radio" name="q7" value="B" required> Mind reading or telekinesis.</label>
-                        <label><input type="radio" name="q7" value="C" required> Healing or control over nature.</label>
-                        <label><input type="radio" name="q7" value="D" required> Invisibility or shape-shifting.</label>
-                    </div>
-
-                    <!-- Question 8 -->
-                    <div class="question-block">
-                        <p>8. How competitive are you?</p>
-                        <label><input type="radio" name="q8" value="A" required> Very! I love to win.</label>
-                        <label><input type="radio" name="q8" value="B" required> Moderately, enjoy a good challenge.</label>
-                        <label><input type="radio" name="q8" value="C" required> Not really, I prefer cooperation.</label>
-                        <label><input type="radio" name="q8" value="D" required> I avoid competition.</label>
-                    </div>
-
-                    <!-- Question 9 -->
-                    <div class="question-block">
-                        <p>9. What's your approach to learning new things?</p>
-                        <label><input type="radio" name="q9" value="A" required> Jump in and experiment.</label>
-                        <label><input type="radio" name="q9" value="B" required> Research thoroughly first.</label>
-                        <label><input type="radio" name="q9" value="C" required> Learn steadily, step-by-step.</label>
-                        <label><input type="radio" name="q9" value="D" required> Get easily distracted or bored.</label>
-                    </div>
-
-                    <!-- Question 10 -->
-                    <div class="question-block">
-                        <p>10. If you were a Pokémon trainer, your focus would be:</p>
-                        <label><input type="radio" name="q10" value="A" required> Becoming the Champion (Power).</label>
-                        <label><input type="radio" name="q10" value="B" required> Completing the Pokédex (Knowledge).</label>
-                        <label><input type="radio" name="q10" value="C" required> Building strong bonds with Pokémon (Friendship).</label>
-                        <label><input type="radio" name="q10" value="D" required> Exploring the world (Adventure).</label>
-                    </div>
-
-                    <button type="submit" id="submit-btn">Analyze!</button>
-                </form>
-            </div>
-
-            <div id="result">
-                <h1>You are...</h1>
-                <h2 id="pokemon-name">???</h2>
-                <img id="pokemon-image" src="" alt="Your Pokemon">
-                 <p style="font-size: 8px; margin-top: 15px;">(Image might take a second to load)</p>
-            </div>
+    <div id="loadingIndicator">Loading Pokémon Data (approx. 1025)...<br><small>This may take a moment.</small></div>
+    <div id="canvasContainer"></div>
+    <div id="controls">
+        <!-- Controls structure remains -->
+        <div class="control-group">
+            <label>Shape:</label>
+            <button onclick="changeShape('sphere')">Sphere</button>
+            <button onclick="changeShape('cube')">Cube</button>
+            <button onclick="changeShape('torus')">Torus</button>
+            <button onclick="changeShape('plane')">Plane</button>
         </div>
-
-        <!-- More decorative elements -->
-        <div class="d-pad"></div>
-        <div class="action-buttons">
-            <div class="action-button"></div> <!-- B -->
-            <div class="action-button"></div> <!-- A -->
+        <div class="control-group">
+            <label for="particleColor">Pokeball Tint Color:</label>
+            <input type="color" id="particleColor" value="#ffffff" oninput="updateParticleColor(this.value)">
+            <small>Set to white for no tint.</small>
+        </div>
+        <div class="control-group">
+            <label for="particleSize">Pokeball Size: <span id="particleSizeValue">8</span></label>
+            <input type="range" id="particleSize" min="1" max="30" value="8" step="0.5" oninput="updateParticleSize(parseFloat(this.value))">
+        </div>
+        <div class="control-group">
+            <label for="particleCount">Pokémon Count: <span id="particleCountValueText">1025</span></label>
+            <input type="number" id="particleCountInput" min="1" value="1025" step="1" onchange="updateParticleCount(parseInt(this.value))">
+            <small>Max: <span id="maxPokemonCount">1025</span></small>
+        </div>
+         <div class="control-group">
+            <label for="animationSpeed">Animation Speed (ms): <span id="animationSpeedValue">1500</span></label>
+            <input type="range" id="animationSpeed" min="200" max="5000" value="1500" step="100" oninput="updateAnimationSpeed(parseFloat(this.value))">
         </div>
     </div>
+    <div id="pokemonInfoBox">
+        <img id="pokemonSprite" src="" alt="Pokémon Sprite">
+        <p id="pokemonNameInfo">Selected: Pokémon</p>
+        <button id="goToPokedexButton">View on Pokédex</button>
+    </div>
 
-    <script>
-        const quizForm = document.getElementById('personality-quiz');
-        const resultDiv = document.getElementById('result');
-        const quizFormDiv = document.getElementById('quiz-form');
-        const pokemonNameEl = document.getElementById('pokemon-name');
-        const pokemonImageEl = document.getElementById('pokemon-image');
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script type="module">
+        if (typeof THREE.OrbitControls === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js';
+            script.onload = () => setTimeout(init, 0); 
+            document.head.appendChild(script);
+        } else {
+            setTimeout(init, 0); 
+        }
 
-        // Simplified Pokemon data - Using official artwork URLs
-        // Source: Using Bulbapedia archive links or similar public resources. Be mindful of potential changes.
-        const pokemonData = {
-            'Energetic': {
-                name: 'Pikachu',
-                // Using a known static image URL for reliability
-                imageUrl: 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/025.png'
-            },
-            'Calm': {
-                name: 'Snorlax',
-                imageUrl: 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/143.png'
-            },
-            'Bold': {
-                name: 'Charizard',
-                imageUrl: 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/006.png'
-            },
-            'Adaptable': {
-                name: 'Eevee',
-                imageUrl: 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/133.png'
-            },
-             'Mysterious': {
-                name: 'Gengar',
-                imageUrl: 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/094.png'
-            },
-            'Loyal': {
-                name: 'Bulbasaur',
-                 imageUrl: 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/001.png'
-            },
-             'Intelligent': {
-                name: 'Alakazam',
-                 imageUrl: 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/065.png'
-            },
-            'Gentle': {
-                name: 'Jigglypuff',
-                 imageUrl: 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/039.png'
+        let scene, camera, renderer, controls;
+        let particleSystem, particleMaterial, particleGeometry;
+        let currentParticles = [];
+        let POKEMON_DATA = []; // Will be filled by API
+        let MAX_POKEMON_PARTICLES = 0;
+        let numParticles; 
+        let particleSize = 8; // Slightly smaller default for more particles
+        let particleColor = new THREE.Color(0xffffff); 
+        let animationDuration = 1500;
+        let pokeballTexture; 
+
+        const POKEBALL_IMAGE_URL = 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Pok%C3%A9_Ball_icon.svg/120px-Pok%C3%A9_Ball_icon.svg.png';
+
+        let raycaster, mouse;
+        let selectorMesh; 
+        let currentSelectedPokemon = null;
+        let currentSelectedParticleIndex = -1;
+
+        let pokemonInfoBoxElement, pokemonSpriteElement, pokemonNameInfoElement, loadingIndicator;
+
+        async function fetchAllPokemonData() {
+            const POKEAPI_URL = 'https://pokeapi.co/api/v2/pokemon?limit=1025&offset=0'; // Fetch first 1025 Pokémon
+            try {
+                const response = await fetch(POKEAPI_URL);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                
+                return data.results.map(pokemon => {
+                    const urlParts = pokemon.url.split('/');
+                    const id = parseInt(urlParts[urlParts.length - 2]);
+                    
+                    // Capitalize first letter and replace hyphens for display name
+                    let displayName = pokemon.name.replace(/-/g, ' ');
+                    displayName = displayName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
+                    return {
+                        name: displayName,
+                        id: id,
+                        serebiiName: pokemon.name // Use PokeAPI's name directly for Serebii URL (mostly works)
+                    };
+                });
+            } catch (error) {
+                console.error("Could not fetch Pokémon data:", error);
+                loadingIndicator.innerHTML = `Error loading Pokémon data: ${error.message}<br>Please try refreshing.`;
+                return [];
             }
-            // Add more Pokémon and refine categories as needed
-        };
+        }
 
-        // Simple mapping from answer values (A, B, C, D) to personality types
-        const answerMapping = {
-            // Q1: Change Reaction
-            'q1_A': 'Adaptable', 'q1_B': 'Intelligent', 'q1_C': 'Loyal', 'q1_D': 'Calm',
-            // Q2: Weekend
-            'q2_A': 'Energetic', 'q2_B': 'Calm', 'q2_C': 'Gentle', 'q2_D': 'Intelligent',
-             // Q3: Problem Solving
-            'q3_A': 'Bold', 'q3_B': 'Intelligent', 'q3_C': 'Loyal', 'q3_D': 'Calm',
-             // Q4: Element
-            'q4_A': 'Bold', 'q4_B': 'Calm', 'q4_C': 'Loyal', 'q4_D': 'Adaptable', // Air -> Adaptable/Eevee?
-            // Q5: Crowds
-            'q5_A': 'Energetic', 'q5_B': 'Intelligent', 'q5_C': 'Gentle', 'q5_D': 'Mysterious', // Alone -> Gengar?
-             // Q6: Description
-            'q6_A': 'Energetic', 'q6_B': 'Loyal', 'q6_C': 'Calm', 'q6_D': 'Mysterious',
-             // Q7: Power
-            'q7_A': 'Bold', 'q7_B': 'Intelligent', 'q7_C': 'Gentle', 'q7_D': 'Mysterious',
-             // Q8: Competition
-            'q8_A': 'Bold', 'q8_B': 'Energetic', 'q8_C': 'Loyal', 'q8_D': 'Calm',
-             // Q9: Learning
-            'q9_A': 'Energetic', 'q9_B': 'Intelligent', 'q9_C': 'Loyal', 'q9_D': 'Adaptable', // Distracted -> Eevee?
-            // Q10: Trainer Focus
-            'q10_A': 'Bold', 'q10_B': 'Intelligent', 'q10_C': 'Gentle', 'q10_D': 'Adaptable'
-        };
+        async function init() {
+            loadingIndicator = document.getElementById('loadingIndicator');
+            pokemonInfoBoxElement = document.getElementById('pokemonInfoBox');
+            pokemonSpriteElement = document.getElementById('pokemonSprite');
+            pokemonNameInfoElement = document.getElementById('pokemonNameInfo');
+
+            loadingIndicator.style.display = 'flex';
+
+            POKEMON_DATA = await fetchAllPokemonData();
+            if (POKEMON_DATA.length === 0) {
+                // Error message is already shown by fetchAllPokemonData
+                return; 
+            }
+            
+            MAX_POKEMON_PARTICLES = POKEMON_DATA.length;
+            numParticles = MAX_POKEMON_PARTICLES; // Start with all Pokémon
+
+            // Update UI elements that depend on MAX_POKEMON_PARTICLES
+            document.getElementById('particleCountInput').max = MAX_POKEMON_PARTICLES;
+            document.getElementById('particleCountInput').value = numParticles;
+            document.getElementById('particleCountValueText').textContent = numParticles;
+            document.getElementById('maxPokemonCount').textContent = MAX_POKEMON_PARTICLES;
 
 
-        quizForm.addEventListener('submit', function(event) {
-            event.preventDefault(); // Prevent the default form submission
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000); // Increased far plane
+            camera.position.z = 250; // Zoom out a bit more for 1025 particles
 
-            const formData = new FormData(quizForm);
-            let scores = {}; // Object to store counts for each personality type
+            const canvasContainer = document.getElementById('canvasContainer');
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); 
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            canvasContainer.appendChild(renderer.domElement);
 
-            // Initialize scores
-             Object.values(pokemonData).forEach(p => {
-                 // Use a unique property like name to get the keys for scores
-                 const type = Object.keys(pokemonData).find(key => pokemonData[key].name === p.name);
-                 if(type) scores[type] = 0;
-             });
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.05;
+                controls.minDistance = 10;
+                controls.maxDistance = 1000; // Increased max distance
+            }
 
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+            raycaster.params.Points.threshold = particleSize * 0.5; 
 
-            // Calculate scores
-            for (let [question, answer] of formData.entries()) {
-                const mapKey = `${question}_${answer}`;
-                const personalityType = answerMapping[mapKey];
-                if (personalityType && scores.hasOwnProperty(personalityType)) {
-                    scores[personalityType]++;
+            const selectorGeometry = new THREE.SphereGeometry(1, 16, 16);
+            const selectorMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.6, depthTest: false });
+            selectorMesh = new THREE.Mesh(selectorGeometry, selectorMaterial);
+            selectorMesh.renderOrder = 1; 
+            selectorMesh.visible = false;
+            scene.add(selectorMesh);
+
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load(
+                POKEBALL_IMAGE_URL,
+                function (texture) { 
+                    pokeballTexture = texture;
+                    pokeballTexture.colorSpace = THREE.SRGBColorSpace;
+
+                    document.getElementById('particleColor').value = "#" + particleColor.getHexString();
+
+                    createParticles(numParticles, 'sphere'); // Create particles AFTER data and texture are loaded
+
+                    window.addEventListener('resize', onWindowResize, false);
+                    canvasContainer.addEventListener('click', onCanvasClick, false);
+                    document.getElementById('goToPokedexButton').addEventListener('click', navigateToPokedex);
+                    document.getElementById('particleSizeValue').textContent = particleSize;
+                    document.getElementById('animationSpeedValue').textContent = animationDuration;
+                    
+                    loadingIndicator.style.display = 'none'; // Hide loading indicator
+                    animate();
+                },
+                undefined, 
+                function (err) { 
+                    console.error('An error happened while loading the Pokeball texture.', err);
+                    loadingIndicator.innerHTML = `Error loading Pokeball texture: ${err.message}<br>Particles may not display correctly.`;
+                    // Still try to proceed, material.map will be undefined
+                    createParticles(numParticles, 'sphere'); 
+                    // We might not hide loadingIndicator fully here if texture fails, to keep error visible.
+                    // Or, add a new small error div. For now, it will be hidden by the next load.
+                    setTimeout(() => loadingIndicator.style.display = 'none', 5000); // Hide after a delay
+                    animate();
                 }
+            );
+        }
+
+        function createParticles(count, shape = 'sphere') {
+            if (particleSystem) {
+                scene.remove(particleSystem);
+                if (particleGeometry) particleGeometry.dispose();
+                if (particleMaterial) particleMaterial.dispose();
             }
 
-            // Find the personality type with the highest score
-            let maxScore = -1;
-            let resultType = 'Adaptable'; // Default fallback
-            let tiedTypes = [];
+            numParticles = Math.min(count, MAX_POKEMON_PARTICLES);
+            currentParticles = []; 
 
-            for (let type in scores) {
-                if (scores[type] > maxScore) {
-                    maxScore = scores[type];
-                    resultType = type;
-                    tiedTypes = [type]; // Reset ties
-                } else if (scores[type] === maxScore) {
-                    tiedTypes.push(type);
+            particleGeometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(numParticles * 3);
+
+            // Ensure we only try to access POKEMON_DATA up to its actual length
+            const pokemonDataSlice = POKEMON_DATA.slice(0, numParticles);
+
+            pokemonDataSlice.forEach((pokemon, i) => {
+                 currentParticles.push({ x: 0, y: 0, z: 0, pokemon: pokemon });
+            });
+            
+            const initialTargetPositions = getShapePositions(shape, numParticles);
+            initialTargetPositions.forEach((pos, i) => {
+                if (currentParticles[i]) { // Check if particle exists for this position
+                    currentParticles[i].x = pos.x;
+                    currentParticles[i].y = pos.y;
+                    currentParticles[i].z = pos.z;
+                    positions[i * 3] = pos.x;
+                    positions[i * 3 + 1] = pos.y;
+                    positions[i * 3 + 2] = pos.z;
                 }
+            });
+
+            particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            particleMaterial = new THREE.PointsMaterial({
+                color: particleColor, size: particleSize, map: pokeballTexture,      
+                blending: THREE.NormalBlending, transparent: true, depthWrite: false,         
+                depthTest: true, sizeAttenuation: true, alphaTest: 0.1             
+            });
+
+            particleSystem = new THREE.Points(particleGeometry, particleMaterial);
+            scene.add(particleSystem);
+            
+            document.getElementById('particleCountValueText').textContent = numParticles;
+            document.getElementById('particleCountInput').value = numParticles;
+
+            deselectParticle();
+        }
+        
+        function getShapePositions(shape, count) {
+            const positions = [];
+            // Increased R slightly for more particles, can be adjusted
+            const R = count > 500 ? 120 : 80; 
+            const r_torus = count > 500 ? 45 : 30;
+
+            for (let i = 0; i < count; i++) {
+                let x, y, z;
+                if (shape === 'sphere') {
+                    const phi = Math.acos(-1 + (2 * i) / count);
+                    const theta = Math.sqrt(count * Math.PI) * phi;
+                    x = R * Math.sin(phi) * Math.cos(theta);
+                    y = R * Math.sin(phi) * Math.sin(theta);
+                    z = R * Math.cos(phi);
+                } else if (shape === 'cube') {
+                    const edgeLength = R * 1.5;
+                    x = (Math.random() - 0.5) * edgeLength;
+                    y = (Math.random() - 0.5) * edgeLength;
+                    z = (Math.random() - 0.5) * edgeLength;
+                } else if (shape === 'torus') {
+                    const u = Math.random() * Math.PI * 2;
+                    const v = Math.random() * Math.PI * 2;
+                    x = (R + r_torus * Math.cos(v)) * Math.cos(u);
+                    y = (R + r_torus * Math.cos(v)) * Math.sin(u);
+                    z = r_torus * Math.sin(v);
+                } else if (shape === 'plane') {
+                    const planeSize = R * 2.5;
+                    x = (Math.random() - 0.5) * planeSize;
+                    y = (Math.random() - 0.5) * planeSize;
+                    z = (Math.random() - 0.5) * 10; 
+                } else { 
+                    const phi = Math.acos(-1 + (2 * i) / count);
+                    const theta = Math.sqrt(count * Math.PI) * phi;
+                    x = R * Math.sin(phi) * Math.cos(theta);
+                    y = R * Math.sin(phi) * Math.sin(theta);
+                    z = R * Math.cos(phi);
+                }
+                positions.push(new THREE.Vector3(x, y, z));
             }
+            return positions;
+        }
 
-             // Simple tie-breaking: just pick the first one alphabetically (or keep the last one found)
-             // Or you could have specific tie-breaker logic if needed.
-             // Current logic uses the last one found if there's a tie with the max score.
-             // Let's explicitly sort and pick the first for consistency if tied.
-             if (tiedTypes.length > 1) {
-                 tiedTypes.sort();
-                 resultType = tiedTypes[0];
-             }
+        window.changeShape = function(newShape) {
+            if (!particleSystem || POKEMON_DATA.length === 0) return;
+            deselectParticle(); 
 
+            const targetPositions = getShapePositions(newShape, numParticles);
+            const positionAttribute = particleGeometry.attributes.position;
 
-            // Get the corresponding Pokemon data
-            const resultPokemon = pokemonData[resultType];
+            anime.remove(currentParticles); 
 
-            // Display the result
-            if (resultPokemon) {
-                pokemonNameEl.textContent = resultPokemon.name;
-                pokemonImageEl.src = resultPokemon.imageUrl;
-                pokemonImageEl.alt = resultPokemon.name;
+            anime({
+                targets: currentParticles,
+                x: (p, i) => targetPositions[i] ? targetPositions[i].x : 0, // Add check for targetPositions
+                y: (p, i) => targetPositions[i] ? targetPositions[i].y : 0,
+                z: (p, i) => targetPositions[i] ? targetPositions[i].z : 0,
+                duration: animationDuration,
+                easing: 'easeInOutQuad',
+                update: function() {
+                    for (let i = 0; i < numParticles; i++) {
+                        if (currentParticles[i]) { // Check if particle exists
+                           positionAttribute.setXYZ(i, currentParticles[i].x, currentParticles[i].y, currentParticles[i].z);
+                        }
+                    }
+                    positionAttribute.needsUpdate = true;
+                }
+            });
+            window.lastShape = newShape;
+        }
 
-                // Hide the form and show the result
-                quizFormDiv.style.display = 'none';
-                resultDiv.style.display = 'block';
+        window.updateParticleColor = function(hexColor) { 
+            if (particleMaterial) {
+                particleColor.set(hexColor);
+                anime({
+                    targets: particleMaterial.color,
+                    r: particleColor.r, g: particleColor.g, b: particleColor.b,
+                    duration: 300, easing: 'linear'
+                });
+            }
+        }
+        
+        window.updateParticleSize = function(size) {
+            particleSize = size;
+            if (particleMaterial) {
+                 anime({
+                    targets: particleMaterial,
+                    size: particleSize,
+                    duration: 300, easing: 'linear',
+                    complete: () => { raycaster.params.Points.threshold = particleSize * 0.5; } 
+                });
+            }
+            selectorMesh.scale.set(particleSize * 0.15, particleSize * 0.15, particleSize * 0.15); 
+            document.getElementById('particleSizeValue').textContent = size;
+        }
 
-                // Scroll the screen back to the top
-                 document.getElementById('screen').scrollTop = 0;
+        window.updateParticleCount = function(count) {
+            if (POKEMON_DATA.length === 0) return; // Don't do anything if data isn't loaded
+            const newCount = Math.min(Math.max(1, count), MAX_POKEMON_PARTICLES);
+            if (newCount !== numParticles) {
+                numParticles = newCount;
+                let currentShapeGuess = window.lastShape || 'sphere';
+                createParticles(numParticles, currentShapeGuess);
+            } else { // If count hasn't changed but input was manually set (e.g. from text input)
+                document.getElementById('particleCountInput').value = newCount; // Ensure input reflects actual numParticles
+            }
+        }
+
+        window.updateAnimationSpeed = function(speed) {
+            animationDuration = speed;
+            document.getElementById('animationSpeedValue').textContent = speed;
+        }
+
+        function onWindowResize() {
+            if (!camera || !renderer) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onCanvasClick(event) {
+            if (!particleSystem || !raycaster) return;
+            event.preventDefault();
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(particleSystem);
+
+            if (intersects.length > 0) {
+                const intersection = intersects[0];
+                const particleIndex = intersection.index;
+
+                // currentParticles[particleIndex] should have the pokemon data
+                if (particleIndex < numParticles && currentParticles[particleIndex] && currentParticles[particleIndex].pokemon) {
+                    selectParticle(particleIndex);
+                } else {
+                    deselectParticle();
+                }
             } else {
-                // Fallback if something went wrong
-                pokemonNameEl.textContent = 'Missingno.'; // :)
-                pokemonImageEl.src = ''; // No image for error
-                pokemonImageEl.alt = 'Error';
-                quizFormDiv.style.display = 'none';
-                resultDiv.style.display = 'block';
+                deselectParticle();
             }
-        });
+        }
 
+        function selectParticle(particleIndex) {
+            currentSelectedParticleIndex = particleIndex;
+            currentSelectedPokemon = currentParticles[particleIndex].pokemon; 
+
+            const posAttr = particleSystem.geometry.attributes.position;
+            const particlePosition = new THREE.Vector3(
+                posAttr.getX(particleIndex),
+                posAttr.getY(particleIndex),
+                posAttr.getZ(particleIndex)
+            );
+
+            selectorMesh.position.copy(particlePosition);
+            selectorMesh.scale.set(particleSize * 0.15, particleSize * 0.15, particleSize * 0.15); 
+            selectorMesh.visible = true;
+            
+            zoomToPosition(particlePosition);
+            updateInfoBox(currentSelectedPokemon);
+        }
+
+        function deselectParticle() {
+            selectorMesh.visible = false;
+            hideInfoBox();
+            currentSelectedPokemon = null;
+            currentSelectedParticleIndex = -1;
+            if (controls) controls.autoRotate = false; 
+        }
+        
+        function zoomToPosition(targetPos) {
+            const offsetDistance = Math.max(particleSize * 2.5, 50); // Adjusted zoom distance
+            
+            const currentCamDirection = new THREE.Vector3().subVectors(camera.position, targetPos).normalize();
+            // If direction is zero (camera is at targetPos), pick a default direction
+            if (currentCamDirection.lengthSq() === 0) {
+                currentCamDirection.set(0,0,1);
+            }
+            const newCamPos = new THREE.Vector3().copy(targetPos).addScaledVector(currentCamDirection, offsetDistance);
+
+            if (controls) {
+                controls.enabled = false; 
+                anime.remove(camera.position);
+                anime.remove(controls.target);
+
+                anime({
+                    targets: camera.position,
+                    x: newCamPos.x, y: newCamPos.y, z: newCamPos.z,
+                    duration: 1000, easing: 'easeInOutSine',
+                    update: () => { if (controls) camera.lookAt(controls.target); }
+                });
+                anime({
+                    targets: controls.target,
+                    x: targetPos.x, y: targetPos.y, z: targetPos.z,
+                    duration: 1000, easing: 'easeInOutSine',
+                    complete: () => { if (controls) controls.enabled = true; }
+                });
+            } else { 
+                 anime({
+                    targets: camera.position,
+                    x: newCamPos.x, y: newCamPos.y, z: newCamPos.z,
+                    duration: 1000, easing: 'easeInOutSine',
+                    update: () => camera.lookAt(targetPos)
+                });
+            }
+        }
+
+        function updateInfoBox(pokemon) {
+            pokemonNameInfoElement.textContent = `${pokemon.name}`;
+            pokemonSpriteElement.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.id}.png`;
+            pokemonSpriteElement.alt = `${pokemon.name} sprite`;
+            pokemonSpriteElement.style.display = 'block'; 
+
+            pokemonSpriteElement.onerror = () => { 
+                pokemonSpriteElement.alt = `Sprite for ${pokemon.name} not found`;
+                pokemonSpriteElement.src = ''; 
+            };
+            pokemonSpriteElement.onload = () => {
+                pokemonSpriteElement.alt = `${pokemon.name} sprite`; 
+            };
+
+            pokemonInfoBoxElement.style.display = 'flex'; 
+        }
+
+        function hideInfoBox() {
+            pokemonInfoBoxElement.style.display = 'none';
+            pokemonSpriteElement.style.display = 'none'; 
+            pokemonSpriteElement.src = ''; 
+            pokemonSpriteElement.alt = 'Pokémon Sprite';
+        }
+
+        function navigateToPokedex() {
+            if (currentSelectedPokemon) {
+                // Using a generic search on Serebii as exact URL might vary more with 1025 Pokemon & forms
+                // const url = `https://www.serebii.net/pokedex-swsh/${currentSelectedPokemon.serebiiName}/`;
+                const searchName = currentSelectedPokemon.serebiiName.replace(/-/g, ''); // Serebii often omits hyphens
+                const url = `https://www.serebii.net/pokemon/${searchName}`; // General Pokemon page
+                // For a more accurate Pokedex entry, you might need more specific generation links.
+                // Example: Serebii's search: https://www.serebii.net/search.shtml?cx=018410393394071909996%3Apeyv2rlla5u&cof=FORID%3A11&ie=UTF-8&q=Pikachu
+                window.open(url, '_blank');
+            }
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls && controls.update) controls.update();
+            
+            if (selectorMesh.visible) {
+                selectorMesh.rotation.y += 0.03;
+                if (currentSelectedParticleIndex !== -1 && particleSystem && 
+                    particleSystem.geometry.attributes.position && 
+                    currentParticles[currentSelectedParticleIndex]) { // Check particle still exists
+                     const posAttr = particleSystem.geometry.attributes.position;
+                     if (posAttr.getX(currentSelectedParticleIndex) !== undefined) { 
+                        selectorMesh.position.set(
+                            posAttr.getX(currentSelectedParticleIndex),
+                            posAttr.getY(currentSelectedParticleIndex),
+                            posAttr.getZ(currentSelectedParticleIndex)
+                        );
+                     } else {
+                        deselectParticle(); 
+                     }
+                } else if (currentSelectedParticleIndex !== -1) { // Particle data gone, deselect
+                    deselectParticle();
+                }
+            }
+            if(renderer && scene && camera) renderer.render(scene, camera);
+        }
     </script>
-
 </body>
 </html>
