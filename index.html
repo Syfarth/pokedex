@@ -2,56 +2,101 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pokémon Particle Cloud - 1025 Pokémon!</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"> <!-- Added user-scalable=no for better mobile experience -->
+    <title>Pokémon Particle Cloud - Mobile Friendly!</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #111; color: #fff; font-family: Arial, sans-serif; }
+        body { margin: 0; overflow: hidden; background-color: #111; color: #fff; font-family: Arial, sans-serif; -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */ }
         #canvasContainer { width: 100vw; height: 100vh; display: block; cursor: pointer; }
+        
         #controls {
             position: absolute;
             top: 10px;
             left: 10px;
-            background-color: rgba(0,0,0,0.7);
-            padding: 15px;
+            background-color: rgba(0,0,0,0.8); /* Slightly more opaque */
+            padding: 10px; /* Reduced padding */
             border-radius: 5px;
+            z-index: 10;
+            transition: transform 0.3s ease-out, width 0.3s ease-out, height 0.3s ease-out;
+            width: 200px; /* Default width */
+            max-height: 90vh; /* Still allow scrolling if content is too much */
+            overflow: hidden; /* Hide content when collapsed */
+        }
+        #controls.collapsed {
+            transform: translateX(-180px); /* Adjust based on toggle button width */
+            width: 50px; /* Width when collapsed, just for the toggle button */
+            height: 50px; /* Height when collapsed */
+            padding: 5px;
+            overflow: hidden; /* Ensure content is hidden */
+        }
+        #controls.collapsed .control-group, 
+        #controls.collapsed label,
+        #controls.collapsed input,
+        #controls.collapsed small,
+        #controls.collapsed #particleCountInput, /* Explicitly hide inputs */
+        #controls.collapsed #particleSize,
+        #controls.collapsed #particleColor,
+        #controls.collapsed #animationSpeed {
+            display: none !important; /* Hide all control content when collapsed */
+        }
+        #controlsContent {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            max-height: 90vh;
-            overflow-y: auto;
-            z-index: 10;
+            gap: 8px; /* Reduced gap */
+            max-height: calc(90vh - 60px); /* Adjust based on padding and toggle button */
+            overflow-y: auto; /* Scroll for content */
         }
-        #controls label, #controls button, #controls input { display: block; margin-bottom: 5px; }
-        #controls button { padding: 8px 12px; background-color: #333; color: #fff; border: 1px solid #555; border-radius: 3px; cursor: pointer; }
-        #controls button:hover { background-color: #555; }
-        #controls input[type="color"], #controls input[type="range"], #controls input[type="number"] { width: 150px; }
-        .control-group { border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 10px; }
+        #toggleControlsButton {
+            background-color: #444;
+            color: white;
+            border: none;
+            padding: 8px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 1.2em; /* Make it a bit bigger for tapping */
+            position: absolute; /* Position inside #controls */
+            top: 5px;
+            right: 5px;
+            z-index: 11; /* Above controls content */
+        }
+        #controls.collapsed #toggleControlsButton {
+            right: -35px; /* Position outside when collapsed (adjust as needed) */
+            transform: translateX(0); /* Reset transform */
+            /* You might need to adjust this positioning precisely based on your final layout */
+        }
+
+
+        #controls label, #controls button, #controls input { display: block; margin-bottom: 3px; }
+        #controls button { padding: 6px 10px; font-size: 0.9em; }
+        #controls input[type="color"], #controls input[type="range"], #controls input[type="number"] { width: 100%; box-sizing: border-box; }
+        .control-group { border-bottom: 1px solid #444; padding-bottom: 8px; margin-bottom: 8px; }
         .control-group:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
 
         #pokemonInfoBox {
             display: none; flex-direction: column; align-items: center;
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background-color: rgba(40,40,60,0.95); padding: 20px; border-radius: 10px;
-            border: 2px solid #606080; text-align: center; box-shadow: 0 0 20px rgba(120,120,255,0.6);
-            width: 250px; z-index: 5;
+            position: absolute; bottom: 10px; /* Adjusted for mobile */
+            left: 50%; transform: translateX(-50%);
+            background-color: rgba(40,40,60,0.95); padding: 15px; border-radius: 10px;
+            border: 2px solid #606080; text-align: center; box-shadow: 0 0 15px rgba(120,120,255,0.6);
+            width: clamp(220px, 80vw, 280px); /* Responsive width */
+            z-index: 5;
         }
         #pokemonSprite {
-            display: none; width: 120px; height: 120px; object-fit: contain; margin-bottom: 15px;
-            border: 3px solid #707090; border-radius: 8px; background-color: rgba(255,255,255,0.1);
+            display: none; width: 100px; height: 100px; object-fit: contain; margin-bottom: 10px;
+            border: 2px solid #707090; border-radius: 8px; background-color: rgba(255,255,255,0.1);
             image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges;
         }
-        #pokemonInfoBox p { margin: 0 0 15px 0; font-size: 1.3em; font-weight: bold;}
+        #pokemonInfoBox p { margin: 0 0 10px 0; font-size: 1.1em; font-weight: bold;}
         #pokemonInfoBox button {
-            padding: 10px 20px; background-color: #c0392b; color: white; border: none;
-            border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.2s ease;
+            padding: 8px 15px; background-color: #c0392b; color: white; border: none;
+            border-radius: 5px; cursor: pointer; font-size: 0.9em; transition: background-color 0.2s ease;
         }
         #pokemonInfoBox button:hover { background-color: #e74c3c; }
 
         #loadingIndicator {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); color: white; display: flex;
-            justify-content: center; align-items: center; font-size: 2em; z-index: 1000;
-            text-align: center; padding: 20px;
+            justify-content: center; align-items: center; font-size: 1.5em; /* Smaller for mobile */
+            z-index: 1000; text-align: center; padding: 20px;
         }
     </style>
 </head>
@@ -59,31 +104,33 @@
     <div id="loadingIndicator">Loading Pokémon Data (approx. 1025)...<br><small>This may take a moment.</small></div>
     <div id="canvasContainer"></div>
     <div id="controls">
-        <!-- Controls structure remains -->
-        <div class="control-group">
-            <label>Shape:</label>
-            <button onclick="changeShape('sphere')">Sphere</button>
-            <button onclick="changeShape('cube')">Cube</button>
-            <button onclick="changeShape('torus')">Torus</button>
-            <button onclick="changeShape('plane')">Plane</button>
-        </div>
-        <div class="control-group">
-            <label for="particleColor">Pokeball Tint Color:</label>
-            <input type="color" id="particleColor" value="#ffffff" oninput="updateParticleColor(this.value)">
-            <small>Set to white for no tint.</small>
-        </div>
-        <div class="control-group">
-            <label for="particleSize">Pokeball Size: <span id="particleSizeValue">8</span></label>
-            <input type="range" id="particleSize" min="1" max="30" value="8" step="0.5" oninput="updateParticleSize(parseFloat(this.value))">
-        </div>
-        <div class="control-group">
-            <label for="particleCount">Pokémon Count: <span id="particleCountValueText">1025</span></label>
-            <input type="number" id="particleCountInput" min="1" value="1025" step="1" onchange="updateParticleCount(parseInt(this.value))">
-            <small>Max: <span id="maxPokemonCount">1025</span></small>
-        </div>
-         <div class="control-group">
-            <label for="animationSpeed">Animation Speed (ms): <span id="animationSpeedValue">1500</span></label>
-            <input type="range" id="animationSpeed" min="200" max="5000" value="1500" step="100" oninput="updateAnimationSpeed(parseFloat(this.value))">
+        <button id="toggleControlsButton">☰</button> <!-- Menu Icon / Text -->
+        <div id="controlsContent">
+            <div class="control-group">
+                <label>Shape:</label>
+                <button onclick="changeShape('sphere')">Sphere</button>
+                <button onclick="changeShape('cube')">Cube</button>
+                <button onclick="changeShape('torus')">Torus</button>
+                <button onclick="changeShape('plane')">Plane</button>
+            </div>
+            <div class="control-group">
+                <label for="particleColor">Pokeball Tint Color:</label>
+                <input type="color" id="particleColor" value="#ffffff" oninput="updateParticleColor(this.value)">
+                <small>Set to white for no tint.</small>
+            </div>
+            <div class="control-group">
+                <label for="particleSize">Pokeball Size: <span id="particleSizeValue">8</span></label>
+                <input type="range" id="particleSize" min="1" max="30" value="8" step="0.5" oninput="updateParticleSize(parseFloat(this.value))">
+            </div>
+            <div class="control-group">
+                <label for="particleCount">Pokémon Count: <span id="particleCountValueText">1025</span></label>
+                <input type="number" id="particleCountInput" min="1" value="1025" step="1" onchange="updateParticleCount(parseInt(this.value))">
+                <small>Max: <span id="maxPokemonCount">1025</span></small>
+            </div>
+             <div class="control-group">
+                <label for="animationSpeed">Animation Speed (ms): <span id="animationSpeedValue">1500</span></label>
+                <input type="range" id="animationSpeed" min="200" max="5000" value="1500" step="100" oninput="updateAnimationSpeed(parseFloat(this.value))">
+            </div>
         </div>
     </div>
     <div id="pokemonInfoBox">
@@ -107,10 +154,10 @@
         let scene, camera, renderer, controls;
         let particleSystem, particleMaterial, particleGeometry;
         let currentParticles = [];
-        let POKEMON_DATA = []; // Will be filled by API
+        let POKEMON_DATA = []; 
         let MAX_POKEMON_PARTICLES = 0;
         let numParticles; 
-        let particleSize = 8; // Slightly smaller default for more particles
+        let particleSize = 8; 
         let particleColor = new THREE.Color(0xffffff); 
         let animationDuration = 1500;
         let pokeballTexture; 
@@ -123,9 +170,10 @@
         let currentSelectedParticleIndex = -1;
 
         let pokemonInfoBoxElement, pokemonSpriteElement, pokemonNameInfoElement, loadingIndicator;
+        let controlsElement, toggleControlsButtonElement, controlsContentElement; // For collapsible menu
 
         async function fetchAllPokemonData() {
-            const POKEAPI_URL = 'https://pokeapi.co/api/v2/pokemon?limit=1025&offset=0'; // Fetch first 1025 Pokémon
+            const POKEAPI_URL = 'https://pokeapi.co/api/v2/pokemon?limit=1025&offset=0';
             try {
                 const response = await fetch(POKEAPI_URL);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -134,20 +182,13 @@
                 return data.results.map(pokemon => {
                     const urlParts = pokemon.url.split('/');
                     const id = parseInt(urlParts[urlParts.length - 2]);
-                    
-                    // Capitalize first letter and replace hyphens for display name
                     let displayName = pokemon.name.replace(/-/g, ' ');
                     displayName = displayName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-
-                    return {
-                        name: displayName,
-                        id: id,
-                        serebiiName: pokemon.name // Use PokeAPI's name directly for Serebii URL (mostly works)
-                    };
+                    return { name: displayName, id: id, serebiiName: pokemon.name };
                 });
             } catch (error) {
                 console.error("Could not fetch Pokémon data:", error);
-                loadingIndicator.innerHTML = `Error loading Pokémon data: ${error.message}<br>Please try refreshing.`;
+                if(loadingIndicator) loadingIndicator.innerHTML = `Error loading Pokémon data: ${error.message}<br>Please try refreshing.`;
                 return [];
             }
         }
@@ -157,28 +198,27 @@
             pokemonInfoBoxElement = document.getElementById('pokemonInfoBox');
             pokemonSpriteElement = document.getElementById('pokemonSprite');
             pokemonNameInfoElement = document.getElementById('pokemonNameInfo');
+            controlsElement = document.getElementById('controls');
+            toggleControlsButtonElement = document.getElementById('toggleControlsButton');
+            controlsContentElement = document.getElementById('controlsContent');
+
 
             loadingIndicator.style.display = 'flex';
 
             POKEMON_DATA = await fetchAllPokemonData();
-            if (POKEMON_DATA.length === 0) {
-                // Error message is already shown by fetchAllPokemonData
-                return; 
-            }
+            if (POKEMON_DATA.length === 0) return; 
             
             MAX_POKEMON_PARTICLES = POKEMON_DATA.length;
-            numParticles = MAX_POKEMON_PARTICLES; // Start with all Pokémon
+            numParticles = MAX_POKEMON_PARTICLES;
 
-            // Update UI elements that depend on MAX_POKEMON_PARTICLES
             document.getElementById('particleCountInput').max = MAX_POKEMON_PARTICLES;
             document.getElementById('particleCountInput').value = numParticles;
             document.getElementById('particleCountValueText').textContent = numParticles;
             document.getElementById('maxPokemonCount').textContent = MAX_POKEMON_PARTICLES;
 
-
             scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000); // Increased far plane
-            camera.position.z = 250; // Zoom out a bit more for 1025 particles
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000); 
+            camera.position.z = window.innerWidth < 768 ? 300 : 250; // Zoom out more on smaller screens
 
             const canvasContainer = document.getElementById('canvasContainer');
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); 
@@ -191,12 +231,15 @@
                 controls.enableDamping = true;
                 controls.dampingFactor = 0.05;
                 controls.minDistance = 10;
-                controls.maxDistance = 1000; // Increased max distance
+                controls.maxDistance = 1000; 
+                controls.enablePan = true; // Ensure panning is enabled
+                // For mobile, OrbitControls usually handles touch events well for navigation.
+                // The selection click will be handled by our pointerdown listener on the canvas.
             }
 
             raycaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
-            raycaster.params.Points.threshold = particleSize * 0.5; 
+            raycaster.params.Points.threshold = particleSize * 0.6; // Slightly increased threshold for touch
 
             const selectorGeometry = new THREE.SphereGeometry(1, 16, 16);
             const selectorMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.6, depthTest: false });
@@ -205,35 +248,51 @@
             selectorMesh.visible = false;
             scene.add(selectorMesh);
 
+            // Setup Collapsible Menu
+            toggleControlsButtonElement.addEventListener('click', () => {
+                controlsElement.classList.toggle('collapsed');
+                // Update button text/icon if needed
+                if (controlsElement.classList.contains('collapsed')) {
+                    toggleControlsButtonElement.innerHTML = '☰'; // Hamburger icon
+                } else {
+                    toggleControlsButtonElement.innerHTML = '×'; // Close icon
+                }
+            });
+            // Start collapsed on small screens
+            if (window.innerWidth < 768) {
+                controlsElement.classList.add('collapsed');
+                toggleControlsButtonElement.innerHTML = '☰';
+            } else {
+                toggleControlsButtonElement.innerHTML = '×';
+            }
+
+
             const textureLoader = new THREE.TextureLoader();
             textureLoader.load(
                 POKEBALL_IMAGE_URL,
                 function (texture) { 
                     pokeballTexture = texture;
                     pokeballTexture.colorSpace = THREE.SRGBColorSpace;
-
                     document.getElementById('particleColor').value = "#" + particleColor.getHexString();
-
-                    createParticles(numParticles, 'sphere'); // Create particles AFTER data and texture are loaded
+                    createParticles(numParticles, 'sphere'); 
 
                     window.addEventListener('resize', onWindowResize, false);
-                    canvasContainer.addEventListener('click', onCanvasClick, false);
+                    // Use pointerdown for more universal click/tap handling
+                    canvasContainer.addEventListener('pointerdown', onCanvasPointerDown, false);
+                    
                     document.getElementById('goToPokedexButton').addEventListener('click', navigateToPokedex);
                     document.getElementById('particleSizeValue').textContent = particleSize;
                     document.getElementById('animationSpeedValue').textContent = animationDuration;
                     
-                    loadingIndicator.style.display = 'none'; // Hide loading indicator
+                    loadingIndicator.style.display = 'none'; 
                     animate();
                 },
                 undefined, 
                 function (err) { 
                     console.error('An error happened while loading the Pokeball texture.', err);
-                    loadingIndicator.innerHTML = `Error loading Pokeball texture: ${err.message}<br>Particles may not display correctly.`;
-                    // Still try to proceed, material.map will be undefined
+                    if(loadingIndicator) loadingIndicator.innerHTML = `Error loading Pokeball texture: ${err.message}<br>Particles may not display correctly.`;
                     createParticles(numParticles, 'sphere'); 
-                    // We might not hide loadingIndicator fully here if texture fails, to keep error visible.
-                    // Or, add a new small error div. For now, it will be hidden by the next load.
-                    setTimeout(() => loadingIndicator.style.display = 'none', 5000); // Hide after a delay
+                    setTimeout(() => { if(loadingIndicator) loadingIndicator.style.display = 'none'; }, 5000); 
                     animate();
                 }
             );
@@ -245,85 +304,58 @@
                 if (particleGeometry) particleGeometry.dispose();
                 if (particleMaterial) particleMaterial.dispose();
             }
-
             numParticles = Math.min(count, MAX_POKEMON_PARTICLES);
             currentParticles = []; 
-
             particleGeometry = new THREE.BufferGeometry();
             const positions = new Float32Array(numParticles * 3);
-
-            // Ensure we only try to access POKEMON_DATA up to its actual length
             const pokemonDataSlice = POKEMON_DATA.slice(0, numParticles);
-
             pokemonDataSlice.forEach((pokemon, i) => {
                  currentParticles.push({ x: 0, y: 0, z: 0, pokemon: pokemon });
             });
-            
             const initialTargetPositions = getShapePositions(shape, numParticles);
             initialTargetPositions.forEach((pos, i) => {
-                if (currentParticles[i]) { // Check if particle exists for this position
-                    currentParticles[i].x = pos.x;
-                    currentParticles[i].y = pos.y;
-                    currentParticles[i].z = pos.z;
-                    positions[i * 3] = pos.x;
-                    positions[i * 3 + 1] = pos.y;
-                    positions[i * 3 + 2] = pos.z;
+                if (currentParticles[i]) { 
+                    currentParticles[i].x = pos.x; currentParticles[i].y = pos.y; currentParticles[i].z = pos.z;
+                    positions[i * 3] = pos.x; positions[i * 3 + 1] = pos.y; positions[i * 3 + 2] = pos.z;
                 }
             });
-
             particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
             particleMaterial = new THREE.PointsMaterial({
                 color: particleColor, size: particleSize, map: pokeballTexture,      
                 blending: THREE.NormalBlending, transparent: true, depthWrite: false,         
                 depthTest: true, sizeAttenuation: true, alphaTest: 0.1             
             });
-
             particleSystem = new THREE.Points(particleGeometry, particleMaterial);
             scene.add(particleSystem);
-            
             document.getElementById('particleCountValueText').textContent = numParticles;
             document.getElementById('particleCountInput').value = numParticles;
-
             deselectParticle();
         }
         
         function getShapePositions(shape, count) {
             const positions = [];
-            // Increased R slightly for more particles, can be adjusted
-            const R = count > 500 ? 120 : 80; 
-            const r_torus = count > 500 ? 45 : 30;
+            const baseR = window.innerWidth < 768 ? 150 : 120; // Adjust base radius for screen size
+            const R = count > 500 ? baseR : (baseR * 0.75); 
+            const r_torus = count > 500 ? baseR * 0.375 : (baseR * 0.75 * 0.375);
 
             for (let i = 0; i < count; i++) {
                 let x, y, z;
                 if (shape === 'sphere') {
                     const phi = Math.acos(-1 + (2 * i) / count);
                     const theta = Math.sqrt(count * Math.PI) * phi;
-                    x = R * Math.sin(phi) * Math.cos(theta);
-                    y = R * Math.sin(phi) * Math.sin(theta);
-                    z = R * Math.cos(phi);
+                    x = R * Math.sin(phi) * Math.cos(theta); y = R * Math.sin(phi) * Math.sin(theta); z = R * Math.cos(phi);
                 } else if (shape === 'cube') {
                     const edgeLength = R * 1.5;
-                    x = (Math.random() - 0.5) * edgeLength;
-                    y = (Math.random() - 0.5) * edgeLength;
-                    z = (Math.random() - 0.5) * edgeLength;
+                    x = (Math.random() - 0.5) * edgeLength; y = (Math.random() - 0.5) * edgeLength; z = (Math.random() - 0.5) * edgeLength;
                 } else if (shape === 'torus') {
-                    const u = Math.random() * Math.PI * 2;
-                    const v = Math.random() * Math.PI * 2;
-                    x = (R + r_torus * Math.cos(v)) * Math.cos(u);
-                    y = (R + r_torus * Math.cos(v)) * Math.sin(u);
-                    z = r_torus * Math.sin(v);
+                    const u = Math.random() * Math.PI * 2; const v = Math.random() * Math.PI * 2;
+                    x = (R + r_torus * Math.cos(v)) * Math.cos(u); y = (R + r_torus * Math.cos(v)) * Math.sin(u); z = r_torus * Math.sin(v);
                 } else if (shape === 'plane') {
                     const planeSize = R * 2.5;
-                    x = (Math.random() - 0.5) * planeSize;
-                    y = (Math.random() - 0.5) * planeSize;
-                    z = (Math.random() - 0.5) * 10; 
+                    x = (Math.random() - 0.5) * planeSize; y = (Math.random() - 0.5) * planeSize; z = (Math.random() - 0.5) * 10; 
                 } else { 
-                    const phi = Math.acos(-1 + (2 * i) / count);
-                    const theta = Math.sqrt(count * Math.PI) * phi;
-                    x = R * Math.sin(phi) * Math.cos(theta);
-                    y = R * Math.sin(phi) * Math.sin(theta);
-                    z = R * Math.cos(phi);
+                    const phi = Math.acos(-1 + (2 * i) / count); const theta = Math.sqrt(count * Math.PI) * phi;
+                    x = R * Math.sin(phi) * Math.cos(theta); y = R * Math.sin(phi) * Math.sin(theta); z = R * Math.cos(phi);
                 }
                 positions.push(new THREE.Vector3(x, y, z));
             }
@@ -333,22 +365,18 @@
         window.changeShape = function(newShape) {
             if (!particleSystem || POKEMON_DATA.length === 0) return;
             deselectParticle(); 
-
             const targetPositions = getShapePositions(newShape, numParticles);
             const positionAttribute = particleGeometry.attributes.position;
-
             anime.remove(currentParticles); 
-
             anime({
                 targets: currentParticles,
-                x: (p, i) => targetPositions[i] ? targetPositions[i].x : 0, // Add check for targetPositions
+                x: (p, i) => targetPositions[i] ? targetPositions[i].x : 0, 
                 y: (p, i) => targetPositions[i] ? targetPositions[i].y : 0,
                 z: (p, i) => targetPositions[i] ? targetPositions[i].z : 0,
-                duration: animationDuration,
-                easing: 'easeInOutQuad',
+                duration: animationDuration, easing: 'easeInOutQuad',
                 update: function() {
                     for (let i = 0; i < numParticles; i++) {
-                        if (currentParticles[i]) { // Check if particle exists
+                        if (currentParticles[i]) {
                            positionAttribute.setXYZ(i, currentParticles[i].x, currentParticles[i].y, currentParticles[i].z);
                         }
                     }
@@ -361,22 +389,15 @@
         window.updateParticleColor = function(hexColor) { 
             if (particleMaterial) {
                 particleColor.set(hexColor);
-                anime({
-                    targets: particleMaterial.color,
-                    r: particleColor.r, g: particleColor.g, b: particleColor.b,
-                    duration: 300, easing: 'linear'
-                });
+                anime({ targets: particleMaterial.color, r: particleColor.r, g: particleColor.g, b: particleColor.b, duration: 300, easing: 'linear' });
             }
         }
         
         window.updateParticleSize = function(size) {
             particleSize = size;
             if (particleMaterial) {
-                 anime({
-                    targets: particleMaterial,
-                    size: particleSize,
-                    duration: 300, easing: 'linear',
-                    complete: () => { raycaster.params.Points.threshold = particleSize * 0.5; } 
+                 anime({ targets: particleMaterial, size: particleSize, duration: 300, easing: 'linear',
+                    complete: () => { raycaster.params.Points.threshold = particleSize * 0.6; } 
                 });
             }
             selectorMesh.scale.set(particleSize * 0.15, particleSize * 0.15, particleSize * 0.15); 
@@ -384,14 +405,14 @@
         }
 
         window.updateParticleCount = function(count) {
-            if (POKEMON_DATA.length === 0) return; // Don't do anything if data isn't loaded
+            if (POKEMON_DATA.length === 0) return; 
             const newCount = Math.min(Math.max(1, count), MAX_POKEMON_PARTICLES);
             if (newCount !== numParticles) {
                 numParticles = newCount;
                 let currentShapeGuess = window.lastShape || 'sphere';
                 createParticles(numParticles, currentShapeGuess);
-            } else { // If count hasn't changed but input was manually set (e.g. from text input)
-                document.getElementById('particleCountInput').value = newCount; // Ensure input reflects actual numParticles
+            } else { 
+                document.getElementById('particleCountInput').value = newCount; 
             }
         }
 
@@ -403,14 +424,30 @@
         function onWindowResize() {
             if (!camera || !renderer) return;
             camera.aspect = window.innerWidth / window.innerHeight;
+            camera.position.z = window.innerWidth < 768 ? 300 : 250; // Re-adjust zoom on resize
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+
+            // Collapse controls on small screens if it was open
+            if (window.innerWidth < 768 && !controlsElement.classList.contains('collapsed')) {
+                controlsElement.classList.add('collapsed');
+                toggleControlsButtonElement.innerHTML = '☰';
+            } else if (window.innerWidth >= 768 && controlsElement.classList.contains('collapsed')) {
+                // Optionally, uncollapse on larger screens if it was collapsed due to resize
+                // controlsElement.classList.remove('collapsed');
+                // toggleControlsButtonElement.innerHTML = '×';
+            }
         }
 
-        function onCanvasClick(event) {
-            if (!particleSystem || !raycaster) return;
-            event.preventDefault();
+        // Use pointerdown for tap/click
+        function onCanvasPointerDown(event) {
+            if (!particleSystem || !raycaster || !renderer) return;
+            
+            // Prevent OrbitControls from conflicting if a particle is hit
+            let intersected = false;
+
             const rect = renderer.domElement.getBoundingClientRect();
+            // For pointer events, use event.clientX/Y directly
             mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
             mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
@@ -418,10 +455,10 @@
             const intersects = raycaster.intersectObject(particleSystem);
 
             if (intersects.length > 0) {
+                intersected = true;
                 const intersection = intersects[0];
                 const particleIndex = intersection.index;
 
-                // currentParticles[particleIndex] should have the pokemon data
                 if (particleIndex < numParticles && currentParticles[particleIndex] && currentParticles[particleIndex].pokemon) {
                     selectParticle(particleIndex);
                 } else {
@@ -430,104 +467,68 @@
             } else {
                 deselectParticle();
             }
+
+            // If a particle was hit, potentially stop OrbitControls from processing this event
+            // This depends on how OrbitControls is set up.
+            // For now, we assume OrbitControls will behave reasonably, but this is a point for refinement if conflicts arise.
+            // if (intersected && controls) {
+            //    event.stopPropagation(); // May or may not be needed/effective
+            // }
         }
+
 
         function selectParticle(particleIndex) {
             currentSelectedParticleIndex = particleIndex;
             currentSelectedPokemon = currentParticles[particleIndex].pokemon; 
-
             const posAttr = particleSystem.geometry.attributes.position;
-            const particlePosition = new THREE.Vector3(
-                posAttr.getX(particleIndex),
-                posAttr.getY(particleIndex),
-                posAttr.getZ(particleIndex)
-            );
-
+            const particlePosition = new THREE.Vector3(posAttr.getX(particleIndex), posAttr.getY(particleIndex), posAttr.getZ(particleIndex));
             selectorMesh.position.copy(particlePosition);
             selectorMesh.scale.set(particleSize * 0.15, particleSize * 0.15, particleSize * 0.15); 
             selectorMesh.visible = true;
-            
             zoomToPosition(particlePosition);
             updateInfoBox(currentSelectedPokemon);
         }
 
         function deselectParticle() {
-            selectorMesh.visible = false;
-            hideInfoBox();
-            currentSelectedPokemon = null;
-            currentSelectedParticleIndex = -1;
+            selectorMesh.visible = false; hideInfoBox();
+            currentSelectedPokemon = null; currentSelectedParticleIndex = -1;
             if (controls) controls.autoRotate = false; 
         }
         
         function zoomToPosition(targetPos) {
-            const offsetDistance = Math.max(particleSize * 2.5, 50); // Adjusted zoom distance
-            
+            const offsetDistance = Math.max(particleSize * 2.5, window.innerWidth < 768 ? 60 : 50); 
             const currentCamDirection = new THREE.Vector3().subVectors(camera.position, targetPos).normalize();
-            // If direction is zero (camera is at targetPos), pick a default direction
-            if (currentCamDirection.lengthSq() === 0) {
-                currentCamDirection.set(0,0,1);
-            }
+            if (currentCamDirection.lengthSq() === 0) currentCamDirection.set(0,0,1);
             const newCamPos = new THREE.Vector3().copy(targetPos).addScaledVector(currentCamDirection, offsetDistance);
 
             if (controls) {
                 controls.enabled = false; 
-                anime.remove(camera.position);
-                anime.remove(controls.target);
-
-                anime({
-                    targets: camera.position,
-                    x: newCamPos.x, y: newCamPos.y, z: newCamPos.z,
-                    duration: 1000, easing: 'easeInOutSine',
-                    update: () => { if (controls) camera.lookAt(controls.target); }
-                });
-                anime({
-                    targets: controls.target,
-                    x: targetPos.x, y: targetPos.y, z: targetPos.z,
-                    duration: 1000, easing: 'easeInOutSine',
-                    complete: () => { if (controls) controls.enabled = true; }
-                });
+                anime.remove(camera.position); anime.remove(controls.target);
+                anime({ targets: camera.position, x: newCamPos.x, y: newCamPos.y, z: newCamPos.z, duration: 1000, easing: 'easeInOutSine', update: () => { if (controls) camera.lookAt(controls.target); } });
+                anime({ targets: controls.target, x: targetPos.x, y: targetPos.y, z: targetPos.z, duration: 1000, easing: 'easeInOutSine', complete: () => { if (controls) controls.enabled = true; } });
             } else { 
-                 anime({
-                    targets: camera.position,
-                    x: newCamPos.x, y: newCamPos.y, z: newCamPos.z,
-                    duration: 1000, easing: 'easeInOutSine',
-                    update: () => camera.lookAt(targetPos)
-                });
+                 anime({ targets: camera.position, x: newCamPos.x, y: newCamPos.y, z: newCamPos.z, duration: 1000, easing: 'easeInOutSine', update: () => camera.lookAt(targetPos) });
             }
         }
 
         function updateInfoBox(pokemon) {
             pokemonNameInfoElement.textContent = `${pokemon.name}`;
             pokemonSpriteElement.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.id}.png`;
-            pokemonSpriteElement.alt = `${pokemon.name} sprite`;
-            pokemonSpriteElement.style.display = 'block'; 
-
-            pokemonSpriteElement.onerror = () => { 
-                pokemonSpriteElement.alt = `Sprite for ${pokemon.name} not found`;
-                pokemonSpriteElement.src = ''; 
-            };
-            pokemonSpriteElement.onload = () => {
-                pokemonSpriteElement.alt = `${pokemon.name} sprite`; 
-            };
-
+            pokemonSpriteElement.alt = `${pokemon.name} sprite`; pokemonSpriteElement.style.display = 'block'; 
+            pokemonSpriteElement.onerror = () => { pokemonSpriteElement.alt = `Sprite for ${pokemon.name} not found`; pokemonSpriteElement.src = ''; };
+            pokemonSpriteElement.onload = () => { pokemonSpriteElement.alt = `${pokemon.name} sprite`; };
             pokemonInfoBoxElement.style.display = 'flex'; 
         }
 
         function hideInfoBox() {
-            pokemonInfoBoxElement.style.display = 'none';
-            pokemonSpriteElement.style.display = 'none'; 
-            pokemonSpriteElement.src = ''; 
-            pokemonSpriteElement.alt = 'Pokémon Sprite';
+            pokemonInfoBoxElement.style.display = 'none'; pokemonSpriteElement.style.display = 'none'; 
+            pokemonSpriteElement.src = ''; pokemonSpriteElement.alt = 'Pokémon Sprite';
         }
 
         function navigateToPokedex() {
             if (currentSelectedPokemon) {
-                // Using a generic search on Serebii as exact URL might vary more with 1025 Pokemon & forms
-                // const url = `https://www.serebii.net/pokedex-swsh/${currentSelectedPokemon.serebiiName}/`;
-                const searchName = currentSelectedPokemon.serebiiName.replace(/-/g, ''); // Serebii often omits hyphens
-                const url = `https://www.serebii.net/pokemon/${searchName}`; // General Pokemon page
-                // For a more accurate Pokedex entry, you might need more specific generation links.
-                // Example: Serebii's search: https://www.serebii.net/search.shtml?cx=018410393394071909996%3Apeyv2rlla5u&cof=FORID%3A11&ie=UTF-8&q=Pikachu
+                const searchName = currentSelectedPokemon.serebiiName.replace(/-/g, '');
+                const url = `https://www.serebii.net/pokemon/${searchName}`;
                 window.open(url, '_blank');
             }
         }
@@ -535,25 +536,15 @@
         function animate() {
             requestAnimationFrame(animate);
             if (controls && controls.update) controls.update();
-            
             if (selectorMesh.visible) {
                 selectorMesh.rotation.y += 0.03;
                 if (currentSelectedParticleIndex !== -1 && particleSystem && 
-                    particleSystem.geometry.attributes.position && 
-                    currentParticles[currentSelectedParticleIndex]) { // Check particle still exists
+                    particleSystem.geometry.attributes.position && currentParticles[currentSelectedParticleIndex]) { 
                      const posAttr = particleSystem.geometry.attributes.position;
                      if (posAttr.getX(currentSelectedParticleIndex) !== undefined) { 
-                        selectorMesh.position.set(
-                            posAttr.getX(currentSelectedParticleIndex),
-                            posAttr.getY(currentSelectedParticleIndex),
-                            posAttr.getZ(currentSelectedParticleIndex)
-                        );
-                     } else {
-                        deselectParticle(); 
-                     }
-                } else if (currentSelectedParticleIndex !== -1) { // Particle data gone, deselect
-                    deselectParticle();
-                }
+                        selectorMesh.position.set(posAttr.getX(currentSelectedParticleIndex), posAttr.getY(currentSelectedParticleIndex), posAttr.getZ(currentSelectedParticleIndex));
+                     } else { deselectParticle(); }
+                } else if (currentSelectedParticleIndex !== -1) { deselectParticle(); }
             }
             if(renderer && scene && camera) renderer.render(scene, camera);
         }
