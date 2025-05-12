@@ -3,40 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Pokémon Particle Cloud - Globe Navigation!</title>
+    <title>Pokémon Particle Cloud - Torus Start!</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #111; color: #fff; font-family: Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
-        #canvasContainer { width: 100vw; height: 100vh; display: block; cursor: grab; } /* cursor: grab for panning feel */
+        #canvasContainer { width: 100vw; height: 100vh; display: block; cursor: grab; }
         #canvasContainer:active { cursor: grabbing; }
 
         #controls {
             position: absolute;
             top: 10px;
             left: 10px;
-            background-color: rgba(0,0,0,0.85); /* More opaque */
-            padding: 0; /* Remove padding here, add to content */
+            background-color: rgba(0,0,0,0.85);
+            padding: 0; 
             border-radius: 5px;
             z-index: 10;
-            transition: transform 0.3s ease-out, width 0.3s ease-out, min-height 0.3s ease-out; /* min-height for toggle button visibility */
-            width: 220px; /* A bit wider */
-            overflow: hidden; /* Important for collapse animation */
-            display: flex; /* Use flex for toggle button positioning */
+            transition: transform 0.3s ease-out, width 0.3s ease-out, min-height 0.3s ease-out; 
+            width: 220px; 
+            overflow: hidden; 
+            display: flex; 
             flex-direction: column;
-            min-height: 40px; /* Ensure toggle button is always visible */
+            min-height: 40px; 
         }
 
         #controls.collapsed {
-            transform: translateX(calc(-100% + 40px)); /* Slide out, leave 40px for toggle */
-            width: 220px; /* Keep width, but most is off-screen */
+            transform: translateX(calc(-100% + 40px)); 
+            width: 220px; 
         }
 
         #controlsHeader {
             display: flex;
-            justify-content: flex-end; /* Push toggle to the right */
+            justify-content: flex-end; 
             align-items: center;
-            padding: 5px; /* Padding for the header area */
-            background-color: rgba(20,20,20,0.5); /* Slight background for header */
-            min-height: 30px; /* Ensure space for the button */
+            padding: 5px; 
+            background-color: rgba(20,20,20,0.5); 
+            min-height: 30px; 
         }
         
         #toggleControlsButton {
@@ -47,25 +47,23 @@
             border-radius: 3px;
             cursor: pointer;
             font-size: 1.2em; 
-            line-height: 1; /* Better vertical alignment for icons */
-            /* No absolute positioning needed now */
+            line-height: 1; 
         }
-        /* No special styling for #toggleControlsButton when collapsed needed with this flex approach */
 
         #controlsContent {
-            padding: 10px; /* Padding for the actual content */
+            padding: 10px; 
             display: flex;
             flex-direction: column;
             gap: 8px; 
-            max-height: calc(90vh - 50px); /* Account for header */
+            max-height: calc(90vh - 50px); 
             overflow-y: auto; 
-            transition: opacity 0.3s ease-out, max-height 0.3s ease-out; /* Smooth fade for content */
+            transition: opacity 0.3s ease-out, max-height 0.3s ease-out; 
         }
 
         #controls.collapsed #controlsContent {
             opacity: 0;
-            max-height: 0; /* Collapse content height */
-            pointer-events: none; /* Prevent interaction with hidden content */
+            max-height: 0; 
+            pointer-events: none; 
         }
 
         #controls label, #controls button, #controls input { display: block; margin-bottom: 3px; }
@@ -156,7 +154,7 @@
             setTimeout(init, 0); 
         }
 
-        let scene, camera, renderer, orbitControls; // Renamed controls to orbitControls for clarity
+        let scene, camera, renderer, orbitControls;
         let particleSystem, particleMaterial, particleGeometry;
         let currentParticles = [];
         let POKEMON_DATA = []; 
@@ -177,7 +175,7 @@
         let pokemonInfoBoxElement, pokemonSpriteElement, pokemonNameInfoElement, loadingIndicator;
         let controlsElement, toggleControlsButtonElement, controlsContentElement;
 
-        async function fetchAllPokemonData() { /* ... same as before ... */ 
+        async function fetchAllPokemonData() {
             const POKEAPI_URL = 'https://pokeapi.co/api/v2/pokemon?limit=1025&offset=0';
             try {
                 const response = await fetch(POKEAPI_URL);
@@ -233,18 +231,14 @@
             if (typeof THREE.OrbitControls !== 'undefined') {
                 orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
                 orbitControls.enableDamping = true;
-                orbitControls.dampingFactor = 0.05; // Smooths out movement
-                orbitControls.screenSpacePanning = false; // false: pans in direction of camera. true: pans in screen space. false is more "Google Earth" like when zoomed in.
-                orbitControls.minDistance = 5;    // How close you can zoom
+                orbitControls.dampingFactor = 0.05; 
+                orbitControls.screenSpacePanning = false; 
+                orbitControls.minDistance = 5;    
                 orbitControls.maxDistance = 1000; 
-                orbitControls.enablePan = true;   // Crucial for "dragging the world"
+                orbitControls.enablePan = true;   
                 orbitControls.panSpeed = 1.0;
                 orbitControls.rotateSpeed = 0.5;
                 orbitControls.zoomSpeed = 0.8;
-
-                // For mobile touch:
-                // orbitControls.touchPanSpeed = 1.0; // (Newer versions might have this)
-                // Default touch interactions (one finger rotate, two finger pan/zoom) should work well.
             }
 
             raycaster = new THREE.Raycaster();
@@ -261,9 +255,9 @@
             toggleControlsButtonElement.addEventListener('click', () => {
                 controlsElement.classList.toggle('collapsed');
                 if (controlsElement.classList.contains('collapsed')) {
-                    toggleControlsButtonElement.innerHTML = '☰'; // Hamburger
+                    toggleControlsButtonElement.innerHTML = '☰'; 
                 } else {
-                    toggleControlsButtonElement.innerHTML = '×';   // Close
+                    toggleControlsButtonElement.innerHTML = '×';   
                 }
             });
             if (window.innerWidth < 768) {
@@ -280,7 +274,13 @@
                     pokeballTexture = texture;
                     pokeballTexture.colorSpace = THREE.SRGBColorSpace;
                     document.getElementById('particleColor').value = "#" + particleColor.getHexString();
-                    createParticles(numParticles, 'sphere'); 
+                    
+                    // --- START WITH TORUS ---
+                    const initialShape = 'torus';
+                    createParticles(numParticles, initialShape); 
+                    window.lastShape = initialShape;
+                    // --- END TORUS START ---
+
                     window.addEventListener('resize', onWindowResize, false);
                     canvasContainer.addEventListener('pointerdown', onCanvasPointerDown, false);
                     document.getElementById('goToPokedexButton').addEventListener('click', navigateToPokedex);
@@ -290,17 +290,23 @@
                     animate();
                 },
                 undefined, 
-                function (err) { /* ... same error handling ... */ 
+                function (err) { 
                     console.error('An error happened while loading the Pokeball texture.', err);
                     if(loadingIndicator) loadingIndicator.innerHTML = `Error loading Pokeball texture: ${err.message}<br>Particles may not display correctly.`;
-                    createParticles(numParticles, 'sphere'); 
+                    
+                    // --- START WITH TORUS (error case) ---
+                    const initialShape = 'torus';
+                    createParticles(numParticles, initialShape); 
+                    window.lastShape = initialShape;
+                    // --- END TORUS START (error case) ---
+
                     setTimeout(() => { if(loadingIndicator) loadingIndicator.style.display = 'none'; }, 5000); 
                     animate();
                 }
             );
         }
 
-        function createParticles(count, shape = 'sphere') { /* ... same as before ... */ 
+        function createParticles(count, shape = 'sphere') {
             if (particleSystem) {
                 scene.remove(particleSystem);
                 if (particleGeometry) particleGeometry.dispose();
@@ -334,7 +340,7 @@
             deselectParticle();
         }
         
-        function getShapePositions(shape, count) { /* ... same as before ... */ 
+        function getShapePositions(shape, count) {
             const positions = [];
             const baseR = window.innerWidth < 768 ? 150 : 120; 
             const R = count > 500 ? baseR : (baseR * 0.75); 
@@ -355,7 +361,7 @@
                 } else if (shape === 'plane') {
                     const planeSize = R * 2.5;
                     x = (Math.random() - 0.5) * planeSize; y = (Math.random() - 0.5) * planeSize; z = (Math.random() - 0.5) * 10; 
-                } else { 
+                } else { // Default to sphere if shape unknown, though our initial call specifies torus
                     const phi = Math.acos(-1 + (2 * i) / count); const theta = Math.sqrt(count * Math.PI) * phi;
                     x = R * Math.sin(phi) * Math.cos(theta); y = R * Math.sin(phi) * Math.sin(theta); z = R * Math.cos(phi);
                 }
@@ -364,7 +370,7 @@
             return positions;
         }
 
-        window.changeShape = function(newShape) { /* ... same as before ... */ 
+        window.changeShape = function(newShape) {
             if (!particleSystem || POKEMON_DATA.length === 0) return;
             deselectParticle(); 
             const targetPositions = getShapePositions(newShape, numParticles);
@@ -387,13 +393,15 @@
             });
             window.lastShape = newShape;
         }
-        window.updateParticleColor = function(hexColor) { /* ... same as before ... */ 
+
+        window.updateParticleColor = function(hexColor) { 
             if (particleMaterial) {
                 particleColor.set(hexColor);
                 anime({ targets: particleMaterial.color, r: particleColor.r, g: particleColor.g, b: particleColor.b, duration: 300, easing: 'linear' });
             }
         }
-        window.updateParticleSize = function(size) { /* ... same as before ... */ 
+        
+        window.updateParticleSize = function(size) {
             particleSize = size;
             if (particleMaterial) {
                  anime({ targets: particleMaterial, size: particleSize, duration: 300, easing: 'linear',
@@ -403,18 +411,20 @@
             selectorMesh.scale.set(particleSize * 0.15, particleSize * 0.15, particleSize * 0.15); 
             document.getElementById('particleSizeValue').textContent = size;
         }
-        window.updateParticleCount = function(count) { /* ... same as before ... */ 
+
+        window.updateParticleCount = function(count) {
             if (POKEMON_DATA.length === 0) return; 
             const newCount = Math.min(Math.max(1, count), MAX_POKEMON_PARTICLES);
             if (newCount !== numParticles) {
                 numParticles = newCount;
-                let currentShapeGuess = window.lastShape || 'sphere';
+                let currentShapeGuess = window.lastShape || 'torus'; // Ensure default is torus if lastShape isn't set
                 createParticles(numParticles, currentShapeGuess);
             } else { 
                 document.getElementById('particleCountInput').value = newCount; 
             }
         }
-        window.updateAnimationSpeed = function(speed) { /* ... same as before ... */ 
+
+        window.updateAnimationSpeed = function(speed) {
             animationDuration = speed;
             document.getElementById('animationSpeedValue').textContent = speed;
         }
@@ -431,7 +441,7 @@
             }
         }
 
-        function onCanvasPointerDown(event) { /* ... same as before ... */ 
+        function onCanvasPointerDown(event) {
             if (!particleSystem || !raycaster || !renderer) return;
             let intersected = false;
             const rect = renderer.domElement.getBoundingClientRect();
@@ -449,7 +459,7 @@
             } else { deselectParticle(); }
         }
 
-        function selectParticle(particleIndex) { /* ... same as before ... */ 
+        function selectParticle(particleIndex) {
             currentSelectedParticleIndex = particleIndex;
             currentSelectedPokemon = currentParticles[particleIndex].pokemon; 
             const posAttr = particleSystem.geometry.attributes.position;
@@ -460,12 +470,14 @@
             zoomToPosition(particlePosition);
             updateInfoBox(currentSelectedPokemon);
         }
-        function deselectParticle() { /* ... same as before ... */ 
+
+        function deselectParticle() {
             selectorMesh.visible = false; hideInfoBox();
             currentSelectedPokemon = null; currentSelectedParticleIndex = -1;
             if (orbitControls) orbitControls.autoRotate = false; 
         }
-        function zoomToPosition(targetPos) { /* ... same as before, check orbitControls... */ 
+        
+        function zoomToPosition(targetPos) {
             const offsetDistance = Math.max(particleSize * 2.5, window.innerWidth < 768 ? 60 : 50); 
             const currentCamDirection = new THREE.Vector3().subVectors(camera.position, targetPos).normalize();
             if (currentCamDirection.lengthSq() === 0) currentCamDirection.set(0,0,1);
@@ -480,7 +492,8 @@
                  anime({ targets: camera.position, x: newCamPos.x, y: newCamPos.y, z: newCamPos.z, duration: 1000, easing: 'easeInOutSine', update: () => camera.lookAt(targetPos) });
             }
         }
-        function updateInfoBox(pokemon) { /* ... same as before ... */ 
+
+        function updateInfoBox(pokemon) {
             pokemonNameInfoElement.textContent = `${pokemon.name}`;
             pokemonSpriteElement.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.id}.png`;
             pokemonSpriteElement.alt = `${pokemon.name} sprite`; pokemonSpriteElement.style.display = 'block'; 
@@ -488,11 +501,13 @@
             pokemonSpriteElement.onload = () => { pokemonSpriteElement.alt = `${pokemon.name} sprite`; };
             pokemonInfoBoxElement.style.display = 'flex'; 
         }
-        function hideInfoBox() { /* ... same as before ... */ 
+
+        function hideInfoBox() {
             pokemonInfoBoxElement.style.display = 'none'; pokemonSpriteElement.style.display = 'none'; 
             pokemonSpriteElement.src = ''; pokemonSpriteElement.alt = 'Pokémon Sprite';
         }
-        function navigateToPokedex() { /* ... same as before ... */ 
+
+        function navigateToPokedex() {
             if (currentSelectedPokemon) {
                 const searchName = currentSelectedPokemon.serebiiName.replace(/-/g, '');
                 const url = `https://www.serebii.net/pokemon/${searchName}`;
@@ -502,7 +517,7 @@
         
         function animate() {
             requestAnimationFrame(animate);
-            if (orbitControls && orbitControls.update) orbitControls.update(); // Update OrbitControls
+            if (orbitControls && orbitControls.update) orbitControls.update();
             
             if (selectorMesh.visible) {
                 selectorMesh.rotation.y += 0.03;
