@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poké Personality Quiz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* Basic Reset & Font */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Press Start 2P', cursive;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #dedede; /* Retro background */
+            color: #333;
+            font-size: 10px; /* Base size for pixel font */
+            line-height: 1.6;
+        }
+
+        /* Pokedex Casing */
+        #pokedex {
+            width: 350px;
+            height: 550px;
+            background-color: #d14040; /* Pokedex red */
+            border-radius: 15px 15px 25px 15px;
+            border: 4px solid #a03030;
+            box-shadow: 5px 5px 10px rgba(0,0,0,0.4);
+            padding: 20px;
+            position: relative; /* For pseudo-elements if needed */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Pokedex "Screen" */
+        #screen {
+            width: 100%;
+            height: 380px;
+            background-color: #a0d0a0; /* Gameboy green-ish */
+            border: 5px inset #70a070;
+            margin-top: 20px;
+            padding: 15px;
+            overflow-y: auto; /* Scroll if content overflows */
+            scrollbar-width: thin; /* For Firefox */
+            scrollbar-color: #70a070 #a0d0a0; /* For Firefox */
+        }
+        /* Webkit scrollbar styling */
+        #screen::-webkit-scrollbar {
+            width: 8px;
+        }
+        #screen::-webkit-scrollbar-track {
+            background: #a0d0a0;
+        }
+        #screen::-webkit-scrollbar-thumb {
+            background-color: #70a070;
+            border-radius: 4px;
+            border: 1px solid #a0d0a0;
+        }
+
+
+        h1 {
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        /* Quiz Form Styling */
+        #quiz-form {
+            display: block; /* Show initially */
+        }
+
+        .question-block {
+            margin-bottom: 15px;
+            border-bottom: 1px dashed #70a070;
+            padding-bottom: 10px;
+        }
+
+        .question-block p {
+            margin-bottom: 8px;
+            font-size: 9px;
+        }
+
+        .question-block label {
+            display: block;
+            margin-bottom: 5px;
+            cursor: pointer;
+            font-size: 8px;
+        }
+
+        .question-block input[type="radio"] {
+            margin-right: 5px;
+            /* Hide default radio, style the label later if needed */
+            appearance: none;
+            -webkit-appearance: none;
+            width: 8px;
+            height: 8px;
+            border: 1px solid #333;
+            border-radius: 50%;
+            display: inline-block;
+            position: relative;
+            top: 1px;
+        }
+
+        .question-block input[type="radio"]:checked {
+            background-color: #333;
+        }
+
+        /* Submit Button */
+        #submit-btn {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            padding: 10px 20px;
+            background-color: #58a8f8; /* Blue button */
+            color: white;
+            border: 2px outset #3078c0;
+            border-radius: 5px;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto 0 auto;
+            text-align: center;
+        }
+
+        #submit-btn:active {
+            border-style: inset;
+            background-color: #4088d0;
+        }
+
+        /* Result Display Styling */
+        #result {
+            display: none; /* Hidden initially */
+            text-align: center;
+        }
+
+        #pokemon-name {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #333;
+            text-transform: uppercase;
+        }
+
+        #pokemon-image {
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+            background-color: #c0e0c0; /* Slightly lighter background for image */
+            border: 3px solid #70a070;
+            padding: 5px;
+            margin: 0 auto; /* Center the image block */
+            display: block;
+            image-rendering: pixelated; /* Keep the pixel art sharp */
+        }
+
+        /* Pokedex "Buttons" & Details (Optional decorative elements) */
+         #pokedex::before {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            width: 25px;
+            height: 25px;
+            background-color: #58a8f8; /* Blue light */
+            border-radius: 50%;
+            border: 3px solid #fff;
+            box-shadow: 0 0 5px #fff;
+         }
+
+         #pokedex::after {
+            content: '';
+            position: absolute;
+            top: 30px;
+            left: 65px;
+            width: 10px;
+            height: 10px;
+            background-color: #d14040; /* Red light */
+            border-radius: 50%;
+            border: 2px solid #a03030;
+         }
+
+         /* Simple D-pad like element */
+         .d-pad {
+            width: 60px;
+            height: 60px;
+            background-color: #333;
+            border-radius: 5px;
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            border: 2px solid #111;
+         }
+         .d-pad::before, .d-pad::after {
+             content: '';
+             position: absolute;
+             background-color: #555;
+             border: 1px solid #222;
+         }
+         .d-pad::before { /* Vertical bar */
+            width: 20px;
+            height: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+         }
+          .d-pad::after { /* Horizontal bar */
+            width: 100%;
+            height: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+          }
+
+         /* Simple A/B Buttons */
+          .action-buttons {
+            position: absolute;
+            bottom: 50px;
+            right: 40px;
+            display: flex;
+            gap: 15px;
+          }
+           .action-button {
+            width: 35px;
+            height: 35px;
+            background-color: #505050; /* Dark gray button */
+            border-radius: 50%;
+            border: 2px solid #222;
+            box-shadow: 2px 2px 3px rgba(0,0,0,0.5);
+           }
+
+
+    </style>
+</head>
+<body>
+
+    <div id="pokedex">
+        <!-- Decorative elements can go here -->
+
+        <div id="screen">
+            <div id="quiz-form">
+                <h1>Poké Personality!</h1>
+                <form id="personality-quiz">
+                    <!-- Question 1 -->
+                    <div class="question-block">
+                        <p>1. How do you react to sudden changes?</p>
+                        <label><input type="radio" name="q1" value="A" required> Adapt quickly, it's exciting!</label>
+                        <label><input type="radio" name="q1" value="B"> Analyze the situation first.</label>
+                        <label><input type="radio" name="q1" value="C"> Prefer stability, but cope.</label>
+                        <label><input type="radio" name="q1" value="D"> Get stressed or uncomfortable.</label>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="question-block">
+                        <p>2. What's your ideal weekend activity?</p>
+                        <label><input type="radio" name="q2" value="A" required> High-energy adventure (hiking, sports).</label>
+                        <label><input type="radio" name="q2" value="B"> Relaxing at home (reading, movies).</label>
+                        <label><input type="radio" name="q2" value="C"> Socializing with friends.</label>
+                        <label><input type="radio" name="q2" value="D"> Working on a personal project or hobby.</label>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="question-block">
+                        <p>3. When faced with a problem, you...</p>
+                        <label><input type="radio" name="q3" value="A" required> Tackle it head-on immediately.</label>
+                        <label><input type="radio" name="q3" value="B"> Think through all possible solutions.</label>
+                        <label><input type="radio" name="q3" value="C"> Ask others for advice or help.</label>
+                        <label><input type="radio" name="q3" value="D"> Hope it resolves itself or avoid it.</label>
+                    </div>
+
+                     <!-- Question 4 -->
+                     <div class="question-block">
+                        <p>4. Which element attracts you most?</p>
+                        <label><input type="radio" name="q4" value="A" required> Fire (Passion, Energy)</label>
+                        <label><input type="radio" name="q4" value="B" required> Water (Calmness, Flow)</label>
+                        <label><input type="radio" name="q4" value="C" required> Earth (Stability, Nature)</label>
+                        <label><input type="radio" name="q4" value="D" required> Air (Freedom, Intellect)</label>
+                    </div>
+
+                    <!-- Question 5 -->
+                    <div class="question-block">
+                        <p>5. How do you typically feel in large crowds?</p>
+                        <label><input type="radio" name="q5" value="A" required> Energized and excited.</label>
+                        <label><input type="radio" name="q5" value="B" required> Observant and analytical.</label>
+                        <label><input type="radio" name="q5" value="C" required> A bit overwhelmed, prefer smaller groups.</label>
+                        <label><input type="radio" name="q5" value="D" required> Uncomfortable, prefer to be alone.</label>
+                    </div>
+
+                     <!-- Question 6 -->
+                     <div class="question-block">
+                        <p>6. Your friends would describe you as:</p>
+                        <label><input type="radio" name="q6" value="A" required> Energetic and spontaneous.</label>
+                        <label><input type="radio" name="q6" value="B" required> Loyal and dependable.</label>
+                        <label><input type="radio" name="q6" value="C" required> Calm and thoughtful.</label>
+                        <label><input type="radio" name="q6" value="D" required> Quirky and mischievous.</label>
+                    </div>
+
+                    <!-- Question 7 -->
+                    <div class="question-block">
+                        <p>7. What kind of power would you want?</p>
+                        <label><input type="radio" name="q7" value="A" required> Super speed or strength.</label>
+                        <label><input type="radio" name="q7" value="B" required> Mind reading or telekinesis.</label>
+                        <label><input type="radio" name="q7" value="C" required> Healing or control over nature.</label>
+                        <label><input type="radio" name="q7" value="D" required> Invisibility or shape-shifting.</label>
+                    </div>
+
+                    <!-- Question 8 -->
+                    <div class="question-block">
+                        <p>8. How competitive are you?</p>
+                        <label><input type="radio" name="q8" value="A" required> Very! I love to win.</label>
+                        <label><input type="radio" name="q8" value="B" required> Moderately, enjoy a good challenge.</label>
+                        <label><input type="radio" name="q8" value="C" required> Not really, I prefer cooperation.</label>
+                        <label><input type="radio" name="q8" value="D" required> I avoid competition.</label>
+                    </div>
+
+                    <!-- Question 9 -->
+                    <div class="question-block">
+                        <p>9. What's your approach to learning new things?</p>
+                        <label><input type="radio" name="q9" value="A" required> Jump in and experiment.</label>
+                        <label><input type="radio" name="q9" value="B" required> Research thoroughly first.</label>
+                        <label><input type="radio" name="q9" value="C" required> Learn steadily, step-by-step.</label>
+                        <label><input type="radio" name="q9" value="D" required> Get easily distracted or bored.</label>
+                    </div>
+
+                    <!-- Question 10 -->
+                    <div class="question-block">
+                        <p>10. If you were a Pokémon trainer, your focus would be:</p>
+                        <label><input type="radio" name="q10" value="A" required> Becoming the Champion (Power).</label>
+                        <label><input type="radio" name="q10" value="B" required> Completing the Pokédex (Knowledge).</label>
+                        <label><input type="radio" name="q10" value="C" required> Building strong bonds with Pokémon (Friendship).</label>
+                        <label><input type="radio" name="q10" value="D" required> Exploring the world (Adventure).</label>
+                    </div>
+
+                    <button type="submit" id="submit-btn">Analyze!</button>
+                </form>
+            </div>
+
+            <div id="result">
+                <h1>You are...</h1>
+                <h2 id="pokemon-name">???</h2>
+                <img id="pokemon-image" src="" alt="Your Pokemon">
+                 <p style="font-size: 8px; margin-top: 15px;">(Image might take a second to load)</p>
+            </div>
+        </div>
+
+        <!-- More decorative elements -->
+        <div class="d-pad"></div>
+        <div class="action-buttons">
+            <div class="action-button"></div> <!-- B -->
+            <div class="action-button"></div> <!-- A -->
+        </div>
+    </div>
+
+    <script>
+        const quizForm = document.getElementById('personality-quiz');
+        const resultDiv = document.getElementById('result');
+        const quizFormDiv = document.getElementById('quiz-form');
+        const pokemonNameEl = document.getElementById('pokemon-name');
+        const pokemonImageEl = document.getElementById('pokemon-image');
+
+        // Simplified Pokemon data - Using official artwork URLs
+        // Source: Using Bulbapedia archive links or similar public resources. Be mindful of potential changes.
+        const pokemonData = {
+            'Energetic': {
+                name: 'Pikachu',
+                // Using a known static image URL for reliability
+                imageUrl: 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/025.png'
+            },
+            'Calm': {
+                name: 'Snorlax',
+                imageUrl: 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/143.png'
+            },
+            'Bold': {
+                name: 'Charizard',
+                imageUrl: 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/006.png'
+            },
+            'Adaptable': {
+                name: 'Eevee',
+                imageUrl: 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/133.png'
+            },
+             'Mysterious': {
+                name: 'Gengar',
+                imageUrl: 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/094.png'
+            },
+            'Loyal': {
+                name: 'Bulbasaur',
+                 imageUrl: 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/001.png'
+            },
+             'Intelligent': {
+                name: 'Alakazam',
+                 imageUrl: 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/065.png'
+            },
+            'Gentle': {
+                name: 'Jigglypuff',
+                 imageUrl: 'https://assets.pokemon.com/assets/cms2/img/pokedex/full/039.png'
+            }
+            // Add more Pokémon and refine categories as needed
+        };
+
+        // Simple mapping from answer values (A, B, C, D) to personality types
+        const answerMapping = {
+            // Q1: Change Reaction
+            'q1_A': 'Adaptable', 'q1_B': 'Intelligent', 'q1_C': 'Loyal', 'q1_D': 'Calm',
+            // Q2: Weekend
+            'q2_A': 'Energetic', 'q2_B': 'Calm', 'q2_C': 'Gentle', 'q2_D': 'Intelligent',
+             // Q3: Problem Solving
+            'q3_A': 'Bold', 'q3_B': 'Intelligent', 'q3_C': 'Loyal', 'q3_D': 'Calm',
+             // Q4: Element
+            'q4_A': 'Bold', 'q4_B': 'Calm', 'q4_C': 'Loyal', 'q4_D': 'Adaptable', // Air -> Adaptable/Eevee?
+            // Q5: Crowds
+            'q5_A': 'Energetic', 'q5_B': 'Intelligent', 'q5_C': 'Gentle', 'q5_D': 'Mysterious', // Alone -> Gengar?
+             // Q6: Description
+            'q6_A': 'Energetic', 'q6_B': 'Loyal', 'q6_C': 'Calm', 'q6_D': 'Mysterious',
+             // Q7: Power
+            'q7_A': 'Bold', 'q7_B': 'Intelligent', 'q7_C': 'Gentle', 'q7_D': 'Mysterious',
+             // Q8: Competition
+            'q8_A': 'Bold', 'q8_B': 'Energetic', 'q8_C': 'Loyal', 'q8_D': 'Calm',
+             // Q9: Learning
+            'q9_A': 'Energetic', 'q9_B': 'Intelligent', 'q9_C': 'Loyal', 'q9_D': 'Adaptable', // Distracted -> Eevee?
+            // Q10: Trainer Focus
+            'q10_A': 'Bold', 'q10_B': 'Intelligent', 'q10_C': 'Gentle', 'q10_D': 'Adaptable'
+        };
+
+
+        quizForm.addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            const formData = new FormData(quizForm);
+            let scores = {}; // Object to store counts for each personality type
+
+            // Initialize scores
+             Object.values(pokemonData).forEach(p => {
+                 // Use a unique property like name to get the keys for scores
+                 const type = Object.keys(pokemonData).find(key => pokemonData[key].name === p.name);
+                 if(type) scores[type] = 0;
+             });
+
+
+            // Calculate scores
+            for (let [question, answer] of formData.entries()) {
+                const mapKey = `${question}_${answer}`;
+                const personalityType = answerMapping[mapKey];
+                if (personalityType && scores.hasOwnProperty(personalityType)) {
+                    scores[personalityType]++;
+                }
+            }
+
+            // Find the personality type with the highest score
+            let maxScore = -1;
+            let resultType = 'Adaptable'; // Default fallback
+            let tiedTypes = [];
+
+            for (let type in scores) {
+                if (scores[type] > maxScore) {
+                    maxScore = scores[type];
+                    resultType = type;
+                    tiedTypes = [type]; // Reset ties
+                } else if (scores[type] === maxScore) {
+                    tiedTypes.push(type);
+                }
+            }
+
+             // Simple tie-breaking: just pick the first one alphabetically (or keep the last one found)
+             // Or you could have specific tie-breaker logic if needed.
+             // Current logic uses the last one found if there's a tie with the max score.
+             // Let's explicitly sort and pick the first for consistency if tied.
+             if (tiedTypes.length > 1) {
+                 tiedTypes.sort();
+                 resultType = tiedTypes[0];
+             }
+
+
+            // Get the corresponding Pokemon data
+            const resultPokemon = pokemonData[resultType];
+
+            // Display the result
+            if (resultPokemon) {
+                pokemonNameEl.textContent = resultPokemon.name;
+                pokemonImageEl.src = resultPokemon.imageUrl;
+                pokemonImageEl.alt = resultPokemon.name;
+
+                // Hide the form and show the result
+                quizFormDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+
+                // Scroll the screen back to the top
+                 document.getElementById('screen').scrollTop = 0;
+            } else {
+                // Fallback if something went wrong
+                pokemonNameEl.textContent = 'Missingno.'; // :)
+                pokemonImageEl.src = ''; // No image for error
+                pokemonImageEl.alt = 'Error';
+                quizFormDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+            }
+        });
+
+    </script>
+
+</body>
+</html>
